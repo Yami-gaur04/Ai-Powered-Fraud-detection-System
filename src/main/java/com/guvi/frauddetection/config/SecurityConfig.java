@@ -64,7 +64,7 @@ public class SecurityConfig {
         http
             .authenticationProvider(daoAuthProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/register", "/assets/**", "/error", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/login", "/register", "/assets/**", "/error", "/favicon.ico").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .anyRequest().authenticated())

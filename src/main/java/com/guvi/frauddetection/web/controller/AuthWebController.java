@@ -21,6 +21,12 @@ public class AuthWebController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /** Root URL redirect to dashboard / login. */
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/dashboard";
+    }
+
     /** Show login page. */
     @GetMapping("/login")
     public String loginPage(@RequestParam(required = false) String error,
