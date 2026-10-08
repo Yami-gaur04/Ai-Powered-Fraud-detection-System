@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Case Detail</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="mb-4">
+  <a href="/admin/reports" class="flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-400 transition w-fit">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Reports
+  </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+  <!-- Case overview -->
+  <div class="lg:col-span-2 glass-card p-6">
+    <div class="flex items-start justify-between mb-6">
+      <div>
+        <h2 class="text-lg font-bold text-white">Case #<span th:text="${caseDetail.caseId}"></span></h2>
+        <p class="text-xs text-gray-500 mt-1" th:text="${caseDetail.createdAt != null ? #temporals.format(caseDetail.createdAt, 'EEEE, dd MMMM yyyy HH:mm') : '—'}"></p>
+      </div>
+      <span th:text="${caseDetail.caseStatus}"
+            th:classappend="${caseDetail.caseStatus.name() == 'OPEN'} ? 'badge-open' : (${caseDetail.caseStatus.name() == 'CONFIRMED_FRAUD'} ? 'badge-confirmed' : 'badge-false-positive')"
+            class="text-sm px-3 py-1.5 rounded-full font-medium"></span>
+    </div>
+
+    <!-- Details grid -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">User Email</p>
+        <p class="text-sm font-medium text-white" th:text="${caseDetail.userEmail}">—</p>
+      </div>
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">Transaction Amount</p>
+        <p class="text-sm font-medium text-white">₹<span th:text="${caseDetail.amount}"></span></p>
+      </div>
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">Merchant</p>
+        <p class="text-sm font-medium text-white" th:text="${caseDetail.merchant}">—</p>
+      </div>
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">Location</p>
+        <p class="text-sm font-medium text-white" th:text="${caseDetail.location}">—</p>
+      </div>
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">Transaction Status</p>
+        <span th:text="${caseDetail.transactionStatus}"
+              th:classappend="${caseDetail.transactionStatus.name() == 'APPROVED'} ? 'badge-approved' : (${caseDetail.transactionStatus.name() == 'FLAGGED'} ? 'badge-flagged' : 'badge-blocked')"
+              class="text-xs px-2.5 py-1 rounded-full font-medium"></span>
+      </div>
+      <div class="bg-white/3 rounded-xl p-4">
+        <p class="text-xs text-gray-500 mb-1">Fraud Score</p>
+        <p class="text-2xl font-bold"
+           th:style="${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.7} ? 'color:#ef4444' : (${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.4} ? 'color:#f59e0b' : 'color:#10b981')"
+           th:text="${caseDetail.fraudScore != null ? #numbers.formatDecimal(caseDetail.fraudScore, 1, 4) : '—'}"></p>
+      </div>
+    </div>
+
+    <!-- Reason -->
+    <div class="bg-amber-500/5 border border-amber-500/15 rounded-xl p-4 mb-6">
+      <p class="text-xs text-amber-400 font-medium mb-1 flex items-center gap-1">
+        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Fraud Reason
+      </p>
+      <p class="text-sm text-gray-300" th:text="${caseDetail.reason}">No reason provided.</p>
+    </div>
+
+    <!-- Admin feedback (if any) -->
+    <div th:if="${caseDetail.adminFeedback != null}" class="bg-indigo-500/5 border border-indigo-500/15 rounded-xl p-4">
+      <p class="text-xs text-indigo-400 font-medium mb-1">Admin Feedback</p>
+      <p class="text-sm text-gray-300" th:text="${caseDetail.adminFeedback}"></p>
+    </div>
+  </div>
+
+  <!-- Risk gauge + review form -->
+  <div class="space-y-4">
+    <!-- Risk Gauge -->
+    <div class="glass-card p-6 flex flex-col items-center">
+      <p class="text-sm font-medium text-white mb-4">Risk Score Gauge</p>
+      <div class="relative w-40 h-40">
+        <svg viewBox="0 0 120 120" class="w-full h-full">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke-width="12" stroke-linecap="round"
+                  th:attr="stroke=${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.7} ? '#ef4444' : (${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.4} ? '#f59e0b' : '#10b981')"
+                  class="gauge-ring"
+                  th:style="'stroke-dasharray: 314; stroke-dashoffset: ' + (314 * (1 - (${caseDetail.fraudScore != null ? caseDetail.fraudScore : 0}))) + ';'"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-2xl font-bold text-white"
+                th:text="${caseDetail.fraudScore != null ? #numbers.formatDecimal(caseDetail.fraudScore * 100, 1, 0) + '%' : '—'}"></span>
+          <span class="text-xs text-gray-500">Risk Level</span>
+        </div>
+      </div>
+      <p class="text-sm mt-3 font-semibold"
+         th:text="${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.7} ? '🔴 HIGH RISK' : (${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.4} ? '🟡 MEDIUM RISK' : '🟢 LOW RISK')"
+         th:style="${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.7} ? 'color:#ef4444' : (${caseDetail.fraudScore != null && caseDetail.fraudScore >= 0.4} ? 'color:#f59e0b' : 'color:#10b981')"></p>
+    </div>
+
+    <!-- Review Form -->
+    <div class="glass-card p-5" th:if="${caseDetail.caseStatus.name() == 'OPEN'}">
+      <h3 class="text-sm font-semibold text-white mb-4">Admin Review</h3>
+      <form method="post" action="/admin/reports/review">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="caseId" th:value="${caseDetail.caseId}"/>
+        <div class="mb-3">
+          <label class="block text-xs text-gray-400 mb-1.5">Update Status</label>
+          <select name="status" class="w-full bg-white/5 border border-white/10 text-gray-300 rounded-xl px-3 py-2 text-sm">
+            <option value="CONFIRMED_FRAUD">Confirmed Fraud</option>
+            <option value="FALSE_POSITIVE">False Positive</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs text-gray-400 mb-1.5">Feedback (optional)</label>
+          <textarea name="feedback" rows="3" placeholder="Add your analysis notes…"
+                    class="w-full bg-white/5 border border-white/10 text-gray-300 placeholder-gray-600 rounded-xl px-3 py-2 text-sm resize-none"></textarea>
+        </div>
+        <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i> Submit Review
+        </button>
+      </form>
+    </div>
+
+    <div th:if="${caseDetail.caseStatus.name() != 'OPEN'}" class="glass-card p-5">
+      <div class="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-2">
+        <i data-lucide="check-circle" class="w-5 h-5"></i> Case Reviewed
+      </div>
+      <p class="text-xs text-gray-500">This case has been reviewed and closed.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+</script>
+
+</th:block>
+</body>
+</html>

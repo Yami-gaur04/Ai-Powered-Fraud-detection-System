@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>My Alerts</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="space-y-6">
+
+  <!-- ── Top Status Summary KPIs ── -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <!-- Active / Open -->
+    <div class="glass-card p-5 border border-amber-500/20 bg-amber-950/10 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-amber-400">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <p class="text-xs text-amber-300 font-medium">Under Review</p>
+        <p class="text-2xl font-bold text-white" th:text="${openCount}">0</p>
+        <p class="text-[11px] text-gray-400">Pending admin verification</p>
+      </div>
+    </div>
+
+    <!-- Confirmed Fraud -->
+    <div class="glass-card p-5 border border-red-500/20 bg-red-950/10 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0 text-red-400">
+        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <p class="text-xs text-red-300 font-medium">Confirmed Fraud</p>
+        <p class="text-2xl font-bold text-white" th:text="${confirmedCount}">0</p>
+        <p class="text-[11px] text-gray-400">Blocked by security team</p>
+      </div>
+    </div>
+
+    <!-- False Positive -->
+    <div class="glass-card p-5 border border-emerald-500/20 bg-emerald-950/10 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400">
+        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <p class="text-xs text-emerald-300 font-medium">Cleared / Safe</p>
+        <p class="text-2xl font-bold text-white" th:text="${falsePositiveCount}">0</p>
+        <p class="text-[11px] text-gray-400">Verified legitimate</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Live Polling & Filter Bar ── -->
+  <div class="glass-card p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+    <!-- Live indicator -->
+    <div class="flex items-center gap-2 text-xs text-gray-400">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span>Live alert stream active</span>
+      <span class="text-gray-600">· Polling every 15s</span>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="flex items-center gap-1.5 overflow-x-auto">
+      <button onclick="setAlertFilter('ALL')" data-filter="ALL"
+              class="alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition">
+        All Alerts (<span th:text="${alerts.size()}">0</span>)
+      </button>
+      <button onclick="setAlertFilter('OPEN')" data-filter="OPEN"
+              class="alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Open
+      </button>
+      <button onclick="setAlertFilter('CONFIRMED_FRAUD')" data-filter="CONFIRMED_FRAUD"
+              class="alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Confirmed
+      </button>
+      <button onclick="setAlertFilter('FALSE_POSITIVE')" data-filter="FALSE_POSITIVE"
+              class="alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Cleared
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Alerts List ── -->
+  <div class="space-y-3" id="alerts-container">
+    <div th:if="${alerts == null or alerts.isEmpty()}" class="glass-card p-12 text-center text-gray-500">
+      <i data-lucide="shield-check" class="w-12 h-12 mx-auto mb-3 text-emerald-400 opacity-60"></i>
+      <h3 class="text-base font-semibold text-white">No Fraud Alerts</h3>
+      <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Your account is safe. Any suspicious transactions flagged by the AI detection engine will appear here.</p>
+    </div>
+
+    <div th:each="a : ${alerts}"
+         class="alert-card glass-card p-5 border transition hover:border-white/15"
+         th:data-status="${a.caseStatus.name()}"
+         th:classappend="${a.caseStatus.name() == 'OPEN' ? 'border-amber-500/30' : (a.caseStatus.name() == 'CONFIRMED_FRAUD' ? 'border-red-500/30' : 'border-emerald-500/30')}">
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <!-- Left details -->
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               th:classappend="${a.caseStatus.name() == 'OPEN' ? 'bg-amber-500/15 text-amber-400' : (a.caseStatus.name() == 'CONFIRMED_FRAUD' ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400')}">
+            <i th:if="${a.caseStatus.name() == 'OPEN'}" data-lucide="alert-triangle" class="w-5 h-5"></i>
+            <i th:if="${a.caseStatus.name() == 'CONFIRMED_FRAUD'}" data-lucide="shield-x" class="w-5 h-5"></i>
+            <i th:if="${a.caseStatus.name() == 'FALSE_POSITIVE'}" data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold text-white text-base" th:text="${a.merchant}">Merchant Name</span>
+              <span class="text-xs text-gray-500 font-mono" th:text="'Case #' + ${a.caseId}">Case #1</span>
+              <span class="text-xs text-gray-600 font-mono" th:text="'(Tx #' + ${a.transactionId} + ')'">(Tx #1)</span>
+            </div>
+
+            <p class="text-xs text-gray-400" th:text="${a.reason}">Detection reason description</p>
+
+            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
+              <span class="flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3 text-gray-400"></i>
+                <span th:text="${a.location}">Location</span>
+              </span>
+              <span class="flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-gray-400"></i>
+                <span th:text="${a.createdAt != null ? #temporals.format(a.createdAt, 'dd MMM yyyy, HH:mm') : '—'}">Date</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Amount, Risk Score & Status -->
+        <div class="flex items-center justify-between md:justify-end gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-white/5">
+          
+          <!-- Risk Score Bar -->
+          <div class="text-right">
+            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Risk Score</p>
+            <div class="flex items-center gap-2 justify-end mt-0.5">
+              <div class="w-16 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full"
+                     th:style="'width: ' + ${(a.fraudScore != null ? a.fraudScore : 0) * 100} + '%'"
+                     th:classappend="${a.fraudScore < 0.3 ? 'bg-emerald-400' : (a.fraudScore < 0.7 ? 'bg-amber-400' : 'bg-red-400')}"></div>
+              </div>
+              <span class="text-xs font-mono font-bold"
+                    th:classappend="${a.fraudScore < 0.3 ? 'text-emerald-400' : (a.fraudScore < 0.7 ? 'text-amber-400' : 'text-red-400')}"
+                    th:text="${#numbers.formatDecimal((a.fraudScore != null ? a.fraudScore : 0) * 100, 1, 0)} + '%'">0%</span>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="text-right">
+            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Amount</p>
+            <p class="text-base font-bold text-white font-mono"
+               th:text="'₹' + ${#numbers.formatDecimal(a.amount, 1, 'COMMA', 2, 'POINT')}">₹0.00</p>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="min-w-[120px] text-right">
+            <span th:if="${a.caseStatus.name() == 'OPEN'}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <span>Under Review</span>
+            </span>
+            <span th:if="${a.caseStatus.name() == 'CONFIRMED_FRAUD'}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+              <span>Confirmed Fraud</span>
+            </span>
+            <span th:if="${a.caseStatus.name() == 'FALSE_POSITIVE'}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Cleared (Safe)</span>
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentAlertFilter = 'ALL';
+
+  function setAlertFilter(status) {
+    currentAlertFilter = status;
+    document.querySelectorAll('.alert-filter-btn').forEach(b => {
+      if (b.dataset.filter === status) {
+        b.className = 'alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition';
+      } else {
+        b.className = 'alert-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition';
+      }
+    });
+
+    const cards = document.querySelectorAll('.alert-card');
+    cards.forEach(c => {
+      if (status === 'ALL' || c.dataset.status === status) {
+        c.style.display = '';
+      } else {
+        c.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+</th:block>
+</body>
+</html>

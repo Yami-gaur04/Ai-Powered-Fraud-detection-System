@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Admin Dashboard</title></head>
+<body>
+<th:block th:fragment="content">
+
+<!-- Flash messages -->
+<div th:if="${success}" class="hidden" id="flash-success" th:data-msg="${success}"></div>
+<div th:if="${error}" class="hidden" id="flash-error" th:data-msg="${error}"></div>
+
+<!-- ── KPI Cards ── -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
+  <!-- Total Transactions -->
+  <div class="glass-card p-5 flex items-start gap-4 hover:border-white/15 transition-colors">
+    <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="activity" class="w-5 h-5 text-indigo-400"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs text-gray-500 mb-0.5 truncate">Total Transactions</p>
+      <p class="text-2xl font-bold text-white" th:text="${report.totalTransactions}">0</p>
+      <p class="text-xs text-emerald-400 mt-0.5">
+        <i data-lucide="trending-up" class="w-3 h-3 inline"></i>
+        +<span th:text="${report.approved}">0</span> approved
+      </p>
+    </div>
+  </div>
+
+  <!-- Fraud Detected -->
+  <div class="glass-card p-5 flex items-start gap-4 hover:border-white/15 transition-colors">
+    <div class="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="shield-alert" class="w-5 h-5 text-red-400"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs text-gray-500 mb-0.5 truncate">Fraud Detected</p>
+      <p class="text-2xl font-bold text-white" th:text="${report.totalCases}">0</p>
+      <p class="text-xs text-red-400 mt-0.5">
+        <i data-lucide="alert-triangle" class="w-3 h-3 inline"></i>
+        <span th:text="${report.openCases}">0</span> open cases
+      </p>
+    </div>
+  </div>
+
+  <!-- Detection Accuracy -->
+  <div class="glass-card p-5 flex items-start gap-4 hover:border-white/15 transition-colors">
+    <div class="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs text-gray-500 mb-0.5 truncate">Detection Accuracy</p>
+      <p class="text-2xl font-bold text-white">
+        <span th:text="${report.detectionPrecisionPercent != null ? report.detectionPrecisionPercent : '—'}">—</span>
+        <span th:if="${report.detectionPrecisionPercent != null}" class="text-sm">%</span>
+      </p>
+      <p class="text-xs text-emerald-400 mt-0.5">
+        <i data-lucide="check-circle" class="w-3 h-3 inline"></i>
+        Based on reviewed cases
+      </p>
+    </div>
+  </div>
+
+  <!-- Flagged Amount -->
+  <div class="glass-card p-5 flex items-start gap-4 hover:border-white/15 transition-colors">
+    <div class="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="flag" class="w-5 h-5 text-amber-400"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs text-gray-500 mb-0.5 truncate">Fraud Rate</p>
+      <p class="text-2xl font-bold text-white">
+        <span th:text="${report.fraudRatePercent}">0</span><span class="text-sm">%</span>
+      </p>
+      <p class="text-xs text-amber-400 mt-0.5">
+        <i data-lucide="bar-chart-2" class="w-3 h-3 inline"></i>
+        <span th:text="${report.flagged}">0</span> flagged
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Charts Row ── -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+  <!-- Fraud Trend Area Chart -->
+  <div class="glass-card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Fraud Trend Overview</h3>
+        <p class="text-xs text-gray-500">Cases detected over time</p>
+      </div>
+      <select id="trend-months" onchange="loadTrendChart()"
+              class="text-xs bg-white/5 border border-white/10 text-gray-300 rounded-lg px-2 py-1">
+        <option value="3">Last 3 months</option>
+        <option value="6" selected>Last 6 months</option>
+        <option value="12">Last 12 months</option>
+      </select>
+    </div>
+    <!-- Skeleton -->
+    <div id="trend-skeleton" class="skeleton h-48 rounded-lg"></div>
+    <canvas id="trendChart" class="hidden" height="200" aria-label="Fraud trend chart"></canvas>
+  </div>
+
+  <!-- Monthly Cases Bar Chart -->
+  <div class="glass-card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Monthly Fraud Cases</h3>
+        <p class="text-xs text-gray-500">Case count by month</p>
+      </div>
+      <select id="monthly-months" onchange="loadMonthlyChart()"
+              class="text-xs bg-white/5 border border-white/10 text-gray-300 rounded-lg px-2 py-1">
+        <option value="3">Last 3 months</option>
+        <option value="6" selected>Last 6 months</option>
+        <option value="12">Last 12 months</option>
+      </select>
+    </div>
+    <div id="monthly-skeleton" class="skeleton h-48 rounded-lg"></div>
+    <canvas id="monthlyChart" class="hidden" height="200" aria-label="Monthly cases chart"></canvas>
+  </div>
+
+  <!-- Status Distribution Donut -->
+  <div class="glass-card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Case Status Distribution</h3>
+        <p class="text-xs text-gray-500">Open / Confirmed / False positive</p>
+      </div>
+    </div>
+    <div id="donut-skeleton" class="skeleton h-48 rounded-lg"></div>
+    <canvas id="donutChart" class="hidden" height="200" aria-label="Status distribution donut"></canvas>
+  </div>
+
+  <!-- Algorithm Performance -->
+  <div class="glass-card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Algorithm Performance</h3>
+        <p class="text-xs text-gray-500">Accuracy by version</p>
+      </div>
+      <span class="text-xs bg-indigo-500/15 text-indigo-400 px-2 py-1 rounded-lg"
+            th:text="${activeAlgorithm != null ? activeAlgorithm.versionName : 'None active'}">v1.0</span>
+    </div>
+    <div id="algo-skeleton" class="skeleton h-48 rounded-lg"></div>
+    <canvas id="algoChart" class="hidden" height="200" aria-label="Algorithm performance chart"></canvas>
+  </div>
+</div>
+
+<!-- ── Recent Fraud Cases Table ── -->
+<div class="glass-card p-5">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h3 class="text-sm font-semibold text-white">Recent Fraud Cases</h3>
+      <p class="text-xs text-gray-500">Latest detected cases</p>
+    </div>
+    <a href="/admin/reports" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+      View all <i data-lucide="arrow-right" class="w-3 h-3"></i>
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm" role="table">
+      <thead>
+        <tr class="text-xs text-gray-500 border-b border-white/5">
+          <th class="text-left pb-3 font-medium">Case ID</th>
+          <th class="text-left pb-3 font-medium">User</th>
+          <th class="text-left pb-3 font-medium">Amount</th>
+          <th class="text-left pb-3 font-medium">Risk Score</th>
+          <th class="text-left pb-3 font-medium">Status</th>
+          <th class="text-left pb-3 font-medium">Date</th>
+          <th class="pb-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="c : ${recentCases}" class="data-row border-b border-white/5 last:border-0">
+          <td class="py-3 font-mono text-xs text-gray-400">#<span th:text="${c.caseId}"></span></td>
+          <td class="py-3 text-gray-300 truncate max-w-[120px]" th:text="${c.userEmail}"></td>
+          <td class="py-3 text-white font-medium">₹<span th:text="${c.amount}"></span></td>
+          <td class="py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full rounded-full"
+                     th:style="'width:' + (${c.fraudScore != null ? c.fraudScore * 100 : 0}) + '%; background:' + (${c.fraudScore != null && c.fraudScore >= 0.7} ? '#ef4444' : (${c.fraudScore != null && c.fraudScore >= 0.4} ? '#f59e0b' : '#10b981'))"></div>
+              </div>
+              <span class="text-xs text-gray-400" th:text="${c.fraudScore != null ? #numbers.formatDecimal(c.fraudScore, 1, 2) : '—'}"></span>
+            </div>
+          </td>
+          <td class="py-3">
+            <span th:text="${c.caseStatus}"
+                  th:classappend="${c.caseStatus.name() == 'OPEN'} ? 'badge-open' : (${c.caseStatus.name() == 'CONFIRMED_FRAUD'} ? 'badge-confirmed' : 'badge-false-positive')"
+                  class="text-xs px-2.5 py-1 rounded-full font-medium"></span>
+          </td>
+          <td class="py-3 text-xs text-gray-500"
+              th:text="${c.createdAt != null ? #temporals.format(c.createdAt, 'dd MMM yyyy') : '—'}"></td>
+          <td class="py-3">
+            <a th:href="'/admin/reports/detail?id=' + ${c.caseId}"
+               class="text-indigo-400 hover:text-indigo-300 text-xs transition-colors">View →</a>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(recentCases)}">
+          <td colspan="7" class="py-8 text-center text-gray-500 text-sm">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+            <p>No fraud cases detected yet</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Progress Tracker Card ── -->
+<div class="glass-card p-5 mt-4">
+  <h3 class="text-sm font-semibold text-white mb-4">System Health</h3>
+  <div class="space-y-4">
+    <div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+        <span>Detection Precision</span>
+        <span th:text="${report.detectionPrecisionPercent != null ? report.detectionPrecisionPercent + '%' : 'N/A'}"></span>
+      </div>
+      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div class="progress-bar"
+             th:style="'width:' + (${report.detectionPrecisionPercent != null ? report.detectionPrecisionPercent : 0}) + '%'"></div>
+      </div>
+    </div>
+    <div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+        <span>Transaction Approval Rate</span>
+        <span th:text="${report.totalTransactions > 0 ? #numbers.formatDecimal(report.approved * 100.0 / report.totalTransactions, 1, 1) + '%' : '0%'}"></span>
+      </div>
+      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div class="progress-bar"
+             th:style="'width:' + (${report.totalTransactions > 0 ? report.approved * 100.0 / report.totalTransactions : 0}) + '%'"></div>
+      </div>
+    </div>
+    <div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+        <span>Fraud Rate</span>
+        <span th:text="${report.fraudRatePercent + '%'}"></span>
+      </div>
+      <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div class="h-full rounded-full" style="background: linear-gradient(90deg, #ef4444, #f87171); border-radius:9999px"
+             th:style="'width:' + ${report.fraudRatePercent} + '%; background: linear-gradient(90deg, #ef4444, #f87171); border-radius:9999px'"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let trendChart, monthlyChart, donutChart, algoChart;
+
+function showChart(id, skeletonId) {
+  document.getElementById(skeletonId).style.display = 'none';
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function loadTrendChart() {
+  const months = document.getElementById('trend-months').value;
+  fetch('/api/charts/fraud-trend?months=' + months)
+    .then(r => r.json())
+    .then(data => {
+      showChart('trendChart', 'trend-skeleton');
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      if (trendChart) trendChart.destroy();
+      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, 'rgba(99,102,241,0.4)');
+      gradient.addColorStop(1, 'rgba(99,102,241,0.0)');
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [{ label: 'Fraud Cases', data: data.values,
+            borderColor: '#6366f1', backgroundColor: gradient,
+            tension: 0.4, fill: true, pointRadius: 4,
+            pointBackgroundColor: '#6366f1', borderWidth: 2 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } },
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } } } }
+      });
+    });
+}
+
+function loadMonthlyChart() {
+  const months = document.getElementById('monthly-months').value;
+  fetch('/api/charts/monthly-cases?months=' + months)
+    .then(r => r.json())
+    .then(data => {
+      showChart('monthlyChart', 'monthly-skeleton');
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      if (monthlyChart) monthlyChart.destroy();
+      monthlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [{ label: 'Cases', data: data.values,
+            backgroundColor: data.colors, borderRadius: 6, borderSkipped: false }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } } },
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } } } }
+      });
+    });
+}
+
+function loadDonutChart() {
+  fetch('/api/charts/status-distribution')
+    .then(r => r.json())
+    .then(data => {
+      showChart('donutChart', 'donut-skeleton');
+      const ctx = document.getElementById('donutChart').getContext('2d');
+      if (donutChart) donutChart.destroy();
+      donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: data.labels,
+          datasets: [{ data: data.values, backgroundColor: data.colors,
+            borderColor: '#0f0f11', borderWidth: 3, hoverOffset: 6 }]
+        },
+        options: { responsive: true, cutout: '65%',
+          plugins: { legend: { position: 'bottom', labels: { color: '#6b7280', font: { size: 11 }, padding: 12 } } } }
+      });
+    });
+}
+
+function loadAlgoChart() {
+  fetch('/api/charts/algorithm-performance')
+    .then(r => r.json())
+    .then(data => {
+      showChart('algoChart', 'algo-skeleton');
+      const ctx = document.getElementById('algoChart').getContext('2d');
+      if (algoChart) algoChart.destroy();
+      algoChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [{ label: 'Accuracy %', data: data.accuracy,
+            backgroundColor: data.colors, borderRadius: 6 }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } },
+            y: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } } } } }
+      });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadTrendChart();
+  loadMonthlyChart();
+  loadDonutChart();
+  loadAlgoChart();
+  lucide.createIcons();
+
+  // Flash message toasts
+  const s = document.getElementById('flash-success');
+  const e = document.getElementById('flash-error');
+  if (s) showToast(s.dataset.msg, 'success');
+  if (e) showToast(e.dataset.msg, 'error');
+});
+</script>
+
+</th:block>
+</body>
+</html>

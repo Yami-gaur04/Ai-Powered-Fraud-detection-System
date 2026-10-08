@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — FraudShield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body { background: #0a0a0b; font-family: 'Inter', sans-serif; }
+    input:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.5); }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="fixed inset-0" style="background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 70%)"></div>
+
+  <div class="relative z-10 w-full max-w-md">
+    <div class="flex items-center justify-center gap-3 mb-8">
+      <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+        <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-white">FraudShield</h1>
+        <p class="text-xs text-gray-500">Create your account</p>
+      </div>
+    </div>
+
+    <div class="bg-[#0f0f11] border border-white/8 rounded-2xl p-8">
+      <!-- Flash messages -->
+      <div th:if="${error}" class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-5 text-sm">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        <span th:text="${error}"></span>
+      </div>
+      <div th:if="${success}" class="flex items-center gap-3 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-xl mb-5 text-sm">
+        <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <span th:text="${success}"></span>
+      </div>
+
+      <h2 class="text-xl font-semibold text-white mb-6">Create your account</h2>
+      <form method="post" action="/register" class="space-y-4" id="reg-form">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-300 mb-1.5">Full name</label>
+          <div class="relative">
+            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+            <input type="text" id="name" name="name" required autocomplete="name" placeholder="Your full name"
+                   class="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-2.5 pl-10 text-sm"/>
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">Email address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+            <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com"
+                   class="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-2.5 pl-10 text-sm"/>
+          </div>
+        </div>
+
+        <div>
+          <label for="reg-password" class="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+            <input type="password" id="reg-password" name="password" required minlength="8" placeholder="Min 8 characters"
+                   class="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-2.5 pl-10 text-sm"/>
+          </div>
+          <!-- Password strength bar -->
+          <div class="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div id="pwd-strength" class="h-full rounded-full transition-all duration-300" style="width:0%"></div>
+          </div>
+          <p id="pwd-hint" class="text-xs text-gray-600 mt-1">Strength: —</p>
+        </div>
+
+        <div>
+          <label for="confirm-password" class="block text-sm font-medium text-gray-300 mb-1.5">Confirm password</label>
+          <div class="relative">
+            <i data-lucide="lock-keyhole" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+            <input type="password" id="confirm-password" name="confirmPassword" required placeholder="Repeat password"
+                   class="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-2.5 pl-10 text-sm"/>
+          </div>
+          <p id="match-hint" class="text-xs mt-1 hidden"></p>
+        </div>
+
+        <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-all mt-2 flex items-center justify-center gap-2 text-sm">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          Create account
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-gray-500 mt-5">
+        Already have an account?
+        <a href="/login" class="text-indigo-400 hover:text-indigo-300 font-medium">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+<script>
+  lucide.createIcons();
+  const pwdInput = document.getElementById('reg-password');
+  const confirmInput = document.getElementById('confirm-password');
+  pwdInput.addEventListener('input', () => {
+    const v = pwdInput.value, bar = document.getElementById('pwd-strength'), hint = document.getElementById('pwd-hint');
+    let score = 0, label = 'Weak', color = '#ef4444';
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v)) score++;
+    if (/[0-9]/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    const pct = [0,25,50,75,100][score];
+    const labels = ['','Weak','Fair','Good','Strong'];
+    const colors = ['','#ef4444','#f59e0b','#3b82f6','#10b981'];
+    bar.style.width = pct + '%';
+    bar.style.background = colors[score] || '#ef4444';
+    hint.textContent = 'Strength: ' + (labels[score] || '—');
+    hint.style.color = colors[score] || '#6b7280';
+  });
+  confirmInput.addEventListener('input', () => {
+    const hint = document.getElementById('match-hint');
+    if (confirmInput.value === pwdInput.value) {
+      hint.textContent = '✓ Passwords match'; hint.className = 'text-xs mt-1 text-green-400';
+    } else {
+      hint.textContent = '✗ Passwords do not match'; hint.className = 'text-xs mt-1 text-red-400';
+    }
+    hint.classList.remove('hidden');
+  });
+</script>
+</body>
+</html>

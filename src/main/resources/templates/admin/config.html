@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Configuration Settings</title></head>
+<body>
+<th:block th:fragment="content">
+
+<!-- Flash messages -->
+<div th:if="${success}" class="hidden" id="flash-success" th:data-msg="${success}"></div>
+<div th:if="${error}" class="hidden" id="flash-error" th:data-msg="${error}"></div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+  <!-- Main config form -->
+  <div class="lg:col-span-2 glass-card p-6">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center">
+        <i data-lucide="sliders-horizontal" class="w-5 h-5 text-indigo-400"></i>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-white">Detection Thresholds</h2>
+        <p class="text-xs text-gray-500">Scores in range 0.0 – 1.0</p>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/config" id="config-form">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <!-- Thresholds section -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label for="flagThreshold" class="block text-xs font-medium text-gray-400 mb-1.5">
+            Flag Threshold
+            <span class="text-gray-600 ml-1">(score ≥ this → FLAGGED)</span>
+          </label>
+          <input type="number" id="flagThreshold" name="flagThreshold" step="0.01" min="0" max="0.99"
+                 th:value="${config.flagThreshold}" required
+                 class="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm focus:border-indigo-500 transition"
+                 aria-describedby="flag-hint"
+                 oninput="updateClientValidation()"/>
+          <p id="flag-hint" class="text-xs text-gray-600 mt-1">Must be less than Block Threshold</p>
+        </div>
+        <div>
+          <label for="blockThreshold" class="block text-xs font-medium text-gray-400 mb-1.5">
+            Block Threshold
+            <span class="text-gray-600 ml-1">(score ≥ this → BLOCKED)</span>
+          </label>
+          <input type="number" id="blockThreshold" name="blockThreshold" step="0.01" min="0.01" max="1"
+                 th:value="${config.blockThreshold}" required
+                 class="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm focus:border-indigo-500 transition"
+                 oninput="updateClientValidation()"/>
+          <p id="block-hint" class="text-xs text-gray-600 mt-1">Must be greater than Flag Threshold</p>
+        </div>
+        <div>
+          <label for="highAmountLimit" class="block text-xs font-medium text-gray-400 mb-1.5">High Amount Limit (₹)</label>
+          <input type="number" id="highAmountLimit" name="highAmountLimit" step="0.01" min="1"
+                 th:value="${config.highAmountLimit}" required
+                 class="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm focus:border-indigo-500 transition"/>
+          <p class="text-xs text-gray-600 mt-1">Transactions near/above this are risky</p>
+        </div>
+        <div>
+          <label for="maxTxPerHour" class="block text-xs font-medium text-gray-400 mb-1.5">Max Transactions / Hour</label>
+          <input type="number" id="maxTxPerHour" name="maxTxPerHour" min="1"
+                 th:value="${config.maxTxPerHour}" required
+                 class="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2 text-sm focus:border-indigo-500 transition"/>
+          <p class="text-xs text-gray-600 mt-1">Velocity rule trigger count</p>
+        </div>
+      </div>
+
+      <!-- Weights section -->
+      <div class="border-t border-white/5 pt-5 mb-5">
+        <h3 class="text-sm font-medium text-white mb-4">Risk Scoring Weights</h3>
+        <p class="text-xs text-gray-500 mb-4">Each weight is 0.0 – 1.0. At least one must be &gt; 0.</p>
+        <div class="space-y-4">
+          <div th:each="w,iter : ${ {'amountWeight','velocityWeight','locationWeight','deviceWeight'} }">
+            <div class="flex items-center justify-between mb-1.5">
+              <label th:for="${w}" class="text-xs font-medium text-gray-400 capitalize"
+                     th:text="${w.replace('Weight','')} + ' Weight'">Amount Weight</label>
+              <span class="text-xs text-indigo-400 font-mono weight-val"
+                    th:text="${w == 'amountWeight' ? config.amountWeight : (w == 'velocityWeight' ? config.velocityWeight : (w == 'locationWeight' ? config.locationWeight : config.deviceWeight))}"></span>
+            </div>
+            <input type="range" th:id="${w}" th:name="${w}" step="0.01" min="0" max="1"
+                   th:value="${w == 'amountWeight' ? config.amountWeight : (w == 'velocityWeight' ? config.velocityWeight : (w == 'locationWeight' ? config.locationWeight : config.deviceWeight))}"
+                   class="w-full accent-indigo-500 cursor-pointer"
+                   oninput="this.previousElementSibling.querySelector('.weight-val') ? '' : ''; this.closest('.space-y-4').querySelectorAll('.weight-val')"/>
+          </div>
+        </div>
+
+        <!-- Individual weight sliders with live value display -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+              <span>Amount Weight</span>
+              <span id="aw-val" th:text="${config.amountWeight}">0.40</span>
+            </div>
+            <input type="range" name="amountWeight" id="amountWeight" min="0" max="1" step="0.01"
+                   th:value="${config.amountWeight}" class="w-full accent-indigo-500"
+                   oninput="document.getElementById('aw-val').textContent = this.value"/>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+              <span>Velocity Weight</span>
+              <span id="vw-val" th:text="${config.velocityWeight}">0.30</span>
+            </div>
+            <input type="range" name="velocityWeight" id="velocityWeight" min="0" max="1" step="0.01"
+                   th:value="${config.velocityWeight}" class="w-full accent-indigo-500"
+                   oninput="document.getElementById('vw-val').textContent = this.value"/>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+              <span>Location Weight</span>
+              <span id="lw-val" th:text="${config.locationWeight}">0.15</span>
+            </div>
+            <input type="range" name="locationWeight" id="locationWeight" min="0" max="1" step="0.01"
+                   th:value="${config.locationWeight}" class="w-full accent-indigo-500"
+                   oninput="document.getElementById('lw-val').textContent = this.value"/>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+              <span>Device Weight</span>
+              <span id="dw-val" th:text="${config.deviceWeight}">0.15</span>
+            </div>
+            <input type="range" name="deviceWeight" id="deviceWeight" min="0" max="1" step="0.01"
+                   th:value="${config.deviceWeight}" class="w-full accent-indigo-500"
+                   oninput="document.getElementById('dw-val').textContent = this.value"/>
+          </div>
+        </div>
+      </div>
+
+      <p id="validation-error" class="text-xs text-red-400 mb-3 hidden"></p>
+
+      <div class="flex gap-3">
+        <button type="submit" id="save-btn"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          Save Configuration
+        </button>
+        <button type="reset"
+                class="px-4 py-2.5 text-sm border border-white/10 text-gray-400 rounded-xl hover:border-white/20 hover:text-white transition">
+          Reset
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Info sidebar -->
+  <div class="space-y-4">
+    <!-- Current values summary -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+        Current Configuration
+      </h3>
+      <div class="space-y-3 text-xs">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Flag at score ≥</span>
+          <span class="text-amber-400 font-mono" th:text="${config.flagThreshold}"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Block at score ≥</span>
+          <span class="text-red-400 font-mono" th:text="${config.blockThreshold}"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">High amount limit</span>
+          <span class="text-white font-mono">₹<span th:text="${config.highAmountLimit}"></span></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Max tx / hour</span>
+          <span class="text-white font-mono" th:text="${config.maxTxPerHour}"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <i data-lucide="help-circle" class="w-4 h-4 text-gray-400"></i>
+        How Scoring Works
+      </h3>
+      <div class="space-y-2 text-xs text-gray-500">
+        <p>The fraud score is a weighted average of 4 risk factors:</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li><span class="text-gray-300">Amount</span> — vs high limit &amp; user average</li>
+          <li><span class="text-gray-300">Velocity</span> — tx count in last hour</li>
+          <li><span class="text-gray-300">Location</span> — new vs known locations</li>
+          <li><span class="text-gray-300">Device</span> — new vs known devices</li>
+        </ul>
+        <p class="mt-2">Score range: 0 (safe) → 1 (high risk)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  const s = document.getElementById('flash-success');
+  const e = document.getElementById('flash-error');
+  if (s) showToast(s.dataset.msg, 'success');
+  if (e) showToast(e.dataset.msg, 'error');
+
+  // Remove duplicate sliders (the range sliders handle weights, remove the first set)
+  document.querySelectorAll('input[type="range"][name="amountWeight"]:not(#amountWeight), input[type="range"][name="velocityWeight"]:not(#velocityWeight), input[type="range"][name="locationWeight"]:not(#locationWeight), input[type="range"][name="deviceWeight"]:not(#deviceWeight)').forEach(el => {
+    el.closest('div')?.remove();
+  });
+});
+
+function updateClientValidation() {
+  const flag = parseFloat(document.getElementById('flagThreshold').value);
+  const block = parseFloat(document.getElementById('blockThreshold').value);
+  const errEl = document.getElementById('validation-error');
+  const saveBtn = document.getElementById('save-btn');
+  if (!isNaN(flag) && !isNaN(block) && flag >= block) {
+    errEl.textContent = 'Flag threshold must be lower than Block threshold.';
+    errEl.classList.remove('hidden');
+    saveBtn.disabled = true;
+    saveBtn.classList.add('opacity-50');
+  } else {
+    errEl.classList.add('hidden');
+    saveBtn.disabled = false;
+    saveBtn.classList.remove('opacity-50');
+  }
+}
+</script>
+
+</th:block>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>My Transactions</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="space-y-6">
+
+  <!-- ── Top Actions & Stats ── -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-white tracking-tight">Transaction History</h2>
+      <p class="text-xs text-gray-500">All transactions analyzed by the AI fraud engine</p>
+    </div>
+    <a href="/user/transactions/new"
+       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition shadow-lg shadow-indigo-600/20 flex-shrink-0">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>New Transaction</span>
+    </a>
+  </div>
+
+  <!-- ── Filters & Search ── -->
+  <div class="glass-card p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+    <!-- Search -->
+    <div class="relative flex-1 max-w-md">
+      <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+      <input type="text" id="tx-search" placeholder="Search merchant, location, ID..."
+             onkeyup="filterTransactions()"
+             class="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition"/>
+    </div>
+
+    <!-- Status Filters -->
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+      <button onclick="setStatusFilter('ALL')" data-filter="ALL"
+              class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition">
+        All (<span th:text="${transactions.size()}">0</span>)
+      </button>
+      <button onclick="setStatusFilter('APPROVED')" data-filter="APPROVED"
+              class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Approved
+      </button>
+      <button onclick="setStatusFilter('FLAGGED')" data-filter="FLAGGED"
+              class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Flagged
+      </button>
+      <button onclick="setStatusFilter('BLOCKED')" data-filter="BLOCKED"
+              class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition">
+        Blocked
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Transactions Table ── -->
+  <div class="glass-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left" id="transactions-table">
+        <thead class="text-xs uppercase bg-white/[0.03] text-gray-400 border-b border-white/5">
+          <tr>
+            <th class="px-5 py-3.5">ID</th>
+            <th class="px-5 py-3.5">Date & Time</th>
+            <th class="px-5 py-3.5">Merchant</th>
+            <th class="px-5 py-3.5">Location</th>
+            <th class="px-5 py-3.5">Amount</th>
+            <th class="px-5 py-3.5">Risk Score</th>
+            <th class="px-5 py-3.5">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-gray-300">
+          <tr th:if="${transactions == null or transactions.isEmpty()}">
+            <td colspan="7" class="px-5 py-12 text-center text-gray-500">
+              <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+              <p class="text-sm font-medium text-gray-400">No transactions recorded yet</p>
+              <p class="text-xs text-gray-600 mt-1">Submit your first transaction to see fraud analysis in action</p>
+              <a href="/user/transactions/new" class="inline-block mt-4 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium">Create Transaction</a>
+            </td>
+          </tr>
+
+          <tr th:each="tx : ${transactions}"
+              class="tx-row hover:bg-white/[0.02] transition-colors"
+              th:data-status="${tx.status.name()}"
+              th:data-search="${tx.id + ' ' + tx.merchant + ' ' + tx.location + ' ' + (tx.paymentMethod != null ? tx.paymentMethod : '')}">
+            
+            <td class="px-5 py-4 font-mono text-xs text-gray-400" th:text="'#' + ${tx.id}">#1</td>
+            
+            <td class="px-5 py-4 whitespace-nowrap text-xs text-gray-400">
+              <span th:text="${tx.transactionTime != null ? #temporals.format(tx.transactionTime, 'dd MMM yyyy, HH:mm') : '—'}">08 Oct 2026</span>
+            </td>
+
+            <td class="px-5 py-4 font-medium text-white max-w-[180px] truncate">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0 text-indigo-400">
+                  <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="truncate" th:text="${tx.merchant}">Merchant</span>
+              </div>
+            </td>
+
+            <td class="px-5 py-4 whitespace-nowrap text-xs text-gray-400">
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-3 h-3 text-gray-500"></i>
+                <span th:text="${tx.location}">Location</span>
+              </div>
+            </td>
+
+            <td class="px-5 py-4 whitespace-nowrap font-bold text-white font-mono">
+              ₹<span th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+            </td>
+
+            <td class="px-5 py-4 whitespace-nowrap">
+              <div class="flex items-center gap-2.5">
+                <div class="w-16 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                  <div class="h-1.5 rounded-full"
+                       th:style="'width: ' + ${(tx.fraudScore != null ? tx.fraudScore : 0) * 100} + '%'"
+                       th:classappend="${tx.fraudScore < 0.3 ? 'bg-emerald-400' : (tx.fraudScore < 0.7 ? 'bg-amber-400' : 'bg-red-400')}"></div>
+                </div>
+                <span class="text-xs font-mono font-semibold"
+                      th:classappend="${tx.fraudScore < 0.3 ? 'text-emerald-400' : (tx.fraudScore < 0.7 ? 'text-amber-400' : 'text-red-400')}"
+                      th:text="${#numbers.formatDecimal((tx.fraudScore != null ? tx.fraudScore : 0) * 100, 1, 0)} + '%'">0%</span>
+              </div>
+            </td>
+
+            <td class="px-5 py-4 whitespace-nowrap">
+              <span th:if="${tx.status.name() == 'APPROVED'}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                <i data-lucide="check-circle" class="w-3 h-3"></i>
+                <span>Approved</span>
+              </span>
+              <span th:if="${tx.status.name() == 'FLAGGED'}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                <span>Flagged</span>
+              </span>
+              <span th:if="${tx.status.name() == 'BLOCKED'}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
+                <i data-lucide="shield-x" class="w-3 h-3"></i>
+                <span>Blocked</span>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer count -->
+    <div class="px-5 py-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
+      <span id="tx-showing-count" th:text="'Showing ' + ${transactions.size()} + ' records'">Showing 0 records</span>
+      <span class="text-gray-600">Updated in real time</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentFilter = 'ALL';
+
+  function setStatusFilter(status) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      if (b.dataset.filter === status) {
+        b.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition';
+      } else {
+        b.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-gray-400 hover:text-white transition';
+      }
+    });
+    filterTransactions();
+  }
+
+  function filterTransactions() {
+    const q = (document.getElementById('tx-search').value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.tx-row');
+    let visible = 0;
+
+    rows.forEach(r => {
+      const rowStatus = r.dataset.status;
+      const rowSearch = (r.dataset.search || '').toLowerCase();
+      const matchesFilter = (currentFilter === 'ALL' || rowStatus === currentFilter);
+      const matchesSearch = (!q || rowSearch.includes(q));
+
+      if (matchesFilter && matchesSearch) {
+        r.style.display = '';
+        visible++;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    const counter = document.getElementById('tx-showing-count');
+    if (counter) counter.textContent = `Showing ${visible} records`;
+  }
+</script>
+
+</th:block>
+</body>
+</html>

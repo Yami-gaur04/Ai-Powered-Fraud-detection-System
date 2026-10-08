@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Algorithm Management</title></head>
+<body>
+<th:block th:fragment="content">
+
+<!-- Flash messages -->
+<div th:if="${success}" class="hidden" id="flash-success" th:data-msg="${success}"></div>
+<div th:if="${error}" class="hidden" id="flash-error" th:data-msg="${error}"></div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+  <!-- Algorithm versions table -->
+  <div class="lg:col-span-2 space-y-4">
+
+    <!-- Performance chart -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-1">Algorithm Performance</h3>
+      <p class="text-xs text-gray-500 mb-4">Accuracy % by version (indigo = active)</p>
+      <div id="algo-skeleton" class="skeleton h-48 rounded-lg"></div>
+      <canvas id="algoChart" class="hidden" height="200" aria-label="Algorithm performance chart"></canvas>
+    </div>
+
+    <!-- Progress tracker -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">Model Training Progress</h3>
+      <div class="space-y-4" id="progress-tracker">
+        <div th:each="v,vs : ${versions}" th:if="${vs.index < 5}">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400" th:if="${v.active}"></i>
+              <i data-lucide="circle" class="w-4 h-4 text-gray-600" th:unless="${v.active}"></i>
+              <span class="text-sm text-white" th:text="${v.versionName}"></span>
+              <span th:if="${v.active}" class="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">Active</span>
+            </div>
+            <span class="text-xs font-mono text-gray-400"
+                  th:text="${v.accuracy != null ? #numbers.formatDecimal(v.accuracy, 1, 1) + '%' : 'N/A'}"></span>
+          </div>
+          <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full progress-bar"
+                 th:style="'width:' + (${v.accuracy != null ? v.accuracy : 0}) + '%'"></div>
+          </div>
+        </div>
+        <div th:if="${#lists.isEmpty(versions)}" class="text-center text-gray-500 text-sm py-4">
+          No algorithm versions yet. Submit feedback below to create the first update.
+        </div>
+      </div>
+    </div>
+
+    <!-- Versions table -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">All Versions</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" role="table">
+          <thead>
+            <tr class="text-xs text-gray-500 border-b border-white/5">
+              <th class="text-left pb-3 font-medium pr-4">Version</th>
+              <th class="text-left pb-3 font-medium pr-4">Accuracy</th>
+              <th class="text-left pb-3 font-medium pr-4">Status</th>
+              <th class="text-left pb-3 font-medium pr-4">Created</th>
+              <th class="text-left pb-3 font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="v : ${versions}" class="data-row border-b border-white/5 last:border-0">
+              <td class="py-3 pr-4 font-mono text-xs text-indigo-400" th:text="${v.versionName}"></td>
+              <td class="py-3 pr-4 text-white font-semibold"
+                  th:text="${v.accuracy != null ? #numbers.formatDecimal(v.accuracy, 1, 1) + '%' : '—'}"></td>
+              <td class="py-3 pr-4">
+                <span th:if="${v.active}" class="text-xs bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-full font-medium">Active</span>
+                <span th:unless="${v.active}" class="text-xs bg-white/5 text-gray-500 px-2.5 py-1 rounded-full">Inactive</span>
+              </td>
+              <td class="py-3 pr-4 text-xs text-gray-500"
+                  th:text="${v.createdAt != null ? #temporals.format(v.createdAt, 'dd MMM yyyy') : '—'}"></td>
+              <td class="py-3 text-xs text-gray-400 truncate max-w-[200px]" th:text="${v.description}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(versions)}">
+              <td colspan="5" class="py-8 text-center text-gray-500 text-sm">
+                No algorithm versions yet.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update form sidebar -->
+  <div class="space-y-4">
+    <div class="glass-card p-5">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 bg-indigo-500/15 rounded-xl flex items-center justify-center">
+          <i data-lucide="cpu" class="w-5 h-5 text-indigo-400"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-white">Trigger Algorithm Update</h3>
+          <p class="text-xs text-gray-500">Learns from reviewed fraud cases</p>
+        </div>
+      </div>
+
+      <div class="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 mb-5">
+        <p class="text-xs text-amber-400">
+          <i data-lucide="info" class="w-3.5 h-3.5 inline mr-1"></i>
+          Requires at least one reviewed fraud case (CONFIRMED or FALSE POSITIVE) to compute feedback.
+        </p>
+      </div>
+
+      <form method="post" action="/admin/algorithms/update">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="mb-3">
+          <label for="versionName" class="block text-xs font-medium text-gray-400 mb-1.5">Version Name (optional)</label>
+          <input type="text" id="versionName" name="versionName" placeholder="e.g. v2.1-tuned"
+                 class="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-3 py-2 text-sm"/>
+        </div>
+        <div class="mb-4">
+          <label for="description" class="block text-xs font-medium text-gray-400 mb-1.5">Description (optional)</label>
+          <textarea id="description" name="description" rows="3" placeholder="Notes about this update…"
+                    class="w-full bg-white/5 border border-white/10 text-gray-300 placeholder-gray-600 rounded-xl px-3 py-2 text-sm resize-none"></textarea>
+        </div>
+        <button type="submit"
+                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          Run Algorithm Update
+        </button>
+      </form>
+    </div>
+
+    <!-- Stats card -->
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-white mb-3">Algorithm Stats</h3>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Total Versions</span>
+          <span class="text-white" th:text="${versions.size()}">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Active Version</span>
+          <span class="text-indigo-400 font-mono"
+                th:text="${versions.stream().filter(v -> v.active).findFirst().map(v -> v.versionName).orElse('None')}">None</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Best Accuracy</span>
+          <span class="text-emerald-400"
+                th:text="${versions.stream().filter(v -> v.accuracy != null).mapToDouble(v -> v.accuracy).max().isPresent() ? #numbers.formatDecimal(versions.stream().filter(v -> v.accuracy != null).mapToDouble(v -> v.accuracy).max().getAsDouble(), 1, 1) + '%' : 'N/A'}">N/A</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  const s = document.getElementById('flash-success');
+  const e = document.getElementById('flash-error');
+  if (s) showToast(s.dataset.msg, 'success');
+  if (e) showToast(e.dataset.msg, 'error');
+
+  fetch('/api/charts/algorithm-performance')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('algo-skeleton').style.display = 'none';
+      const c = document.getElementById('algoChart');
+      c.classList.remove('hidden');
+      new Chart(c.getContext('2d'), {
+        type: 'bar',
+        data: { labels: data.labels,
+          datasets: [{ label: 'Accuracy %', data: data.accuracy, backgroundColor: data.colors, borderRadius: 6 }] },
+        options: { indexAxis:'y', responsive:true,
+          plugins: { legend: { display:false } },
+          scales: { x: { beginAtZero:true, max:100, grid: { color:'rgba(255,255,255,0.05)' }, ticks: { color:'#6b7280', font:{size:10} } },
+            y: { grid: { display:false }, ticks: { color:'#6b7280', font:{size:10} } } } }
+      });
+    });
+});
+</script>
+
+</th:block>
+</body>
+</html>

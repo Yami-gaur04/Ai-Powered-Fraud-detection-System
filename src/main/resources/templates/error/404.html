@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>404 Not Found — FraudShield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body { background: #0a0a0b; font-family: 'Inter', sans-serif; }
+    .glow { box-shadow: 0 0 80px rgba(99, 102, 241, 0.15); }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 text-gray-100">
+
+  <div class="fixed inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+
+  <div class="relative z-10 w-full max-w-lg text-center space-y-6">
+    <!-- Icon badge -->
+    <div class="w-20 h-20 bg-indigo-500/10 border border-indigo-500/30 rounded-3xl mx-auto flex items-center justify-center glow">
+      <i data-lucide="compass" class="w-10 h-10 text-indigo-400"></i>
+    </div>
+
+    <!-- Error message -->
+    <div>
+      <p class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-2">Error 404 · Resource Not Found</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Page Missing</h1>
+      <p class="text-sm text-gray-400 mt-2 max-w-md mx-auto">
+        The resource or report you are looking for has been moved, renamed, or is unavailable.
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+      <a href="/dashboard"
+         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/20">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        <span>Return to Dashboard</span>
+      </a>
+      <button onclick="history.back()"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-medium text-sm transition border border-white/10">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Go Back</span>
+      </button>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

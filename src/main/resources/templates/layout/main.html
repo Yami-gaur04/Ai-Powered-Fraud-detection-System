@@ -1,0 +1,374 @@
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content)">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${pageTitle} + ' — FraudShield'">FraudShield</title>
+  <meta name="description" th:content="'AI-Powered Fraud Detection System - ' + ${pageTitle}"/>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff',
+              400: '#818cf8', 500: '#6366f1',
+              600: '#4f46e5', 700: '#4338ca'
+            },
+            dark: {
+              bg: '#0a0a0b', card: '#0f0f11',
+              border: 'rgba(255,255,255,0.08)',
+              text: '#e5e7eb', muted: '#6b7280'
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in-out',
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-dot': 'pulseDot 2s infinite'
+          },
+          keyframes: {
+            fadeIn: { '0%': {opacity: '0', transform: 'translateY(-8px)'}, '100%': {opacity: '1', transform: 'translateY(0)'} },
+            slideIn: { '0%': {opacity: '0', transform: 'translateX(-16px)'}, '100%': {opacity: '1', transform: 'translateX(0)'} },
+            pulseDot: { '0%,100%': {opacity:'1'}, '50%': {opacity:'.4'} }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    body { background-color: #0a0a0b; font-family: 'Inter', sans-serif; }
+    :root {
+      --bg: #0a0a0b; --card: #0f0f11; --border: rgba(255,255,255,0.08);
+      --text: #e5e7eb; --muted: #6b7280; --brand: #6366f1;
+    }
+    .light-mode {
+      --bg: #f9fafb; --card: #ffffff; --border: rgba(0,0,0,0.1);
+      --text: #111827; --muted: #6b7280; --brand: #4f46e5;
+    }
+    /* Sidebar */
+    .sidebar { width: 260px; transition: width 0.3s ease; }
+    .sidebar.collapsed { width: 72px; }
+    .sidebar.collapsed .nav-label,
+    .sidebar.collapsed .logo-text,
+    .sidebar.collapsed .user-info { display: none; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    /* Status badges */
+    .badge-open { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-confirmed { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .badge-false-positive { background: rgba(16,185,129,0.15); color: #10b981; }
+    .badge-approved { background: rgba(16,185,129,0.15); color: #10b981; }
+    .badge-flagged { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-blocked { background: rgba(239,68,68,0.15); color: #ef4444; }
+    /* Cards */
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+    }
+    /* Skeleton loader */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 0.5rem;
+    }
+    /* Toast notifications */
+    #toast-container {
+      position: fixed; top: 1rem; right: 1rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .toast {
+      padding: 0.75rem 1rem; border-radius: 0.75rem; min-width: 280px;
+      display: flex; align-items: center; gap: 0.75rem;
+      animation: fadeIn 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .toast-success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
+    .toast-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+    .toast-warn { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+    /* Table hover */
+    tr.data-row:hover { background: rgba(255,255,255,0.03); }
+    /* Progress bars */
+    .progress-bar {
+      background: linear-gradient(90deg, #6366f1, #818cf8);
+      border-radius: 9999px; height: 8px; transition: width 0.8s ease;
+    }
+    /* Gauge */
+    .gauge-ring {
+      transform-origin: center;
+      transform: rotate(-90deg);
+      transition: stroke-dashoffset 1s ease;
+    }
+    /* Mobile drawer */
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 50; transition: left 0.3s ease; }
+      .sidebar.open { left: 0; }
+      .main-content { margin-left: 0 !important; }
+    }
+  </style>
+
+  <th:block th:fragment="head-extra"></th:block>
+</head>
+<body class="text-gray-100 min-h-screen">
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Flash messages from server -->
+<div th:if="${success}" class="hidden" id="flash-success" th:data-msg="${success}"></div>
+<div th:if="${error}" class="hidden" id="flash-error" th:data-msg="${error}"></div>
+
+<!-- Mobile overlay -->
+<div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+<div class="flex min-h-screen">
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside id="sidebar" class="sidebar flex flex-col bg-[#0f0f11] border-r border-white/5 overflow-y-auto" role="navigation" aria-label="Main navigation">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-white/5">
+      <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+      </div>
+      <span class="logo-text font-bold text-white text-lg tracking-tight">FraudShield</span>
+    </div>
+
+    <!-- Nav items - Admin -->
+    <nav class="flex-1 px-3 py-4 space-y-1" sec:authorize="hasRole('ADMIN')">
+      <p class="nav-label text-[10px] uppercase font-semibold text-gray-500 px-2 mb-2 tracking-widest">Admin</p>
+      <a href="/admin/dashboard"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Dashboard">
+        <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/admin/reports"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Reports">
+        <i data-lucide="file-bar-chart" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="/admin/algorithms"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Algorithms">
+        <i data-lucide="cpu" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Algorithms</span>
+      </a>
+      <a href="/admin/config"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Configuration">
+        <i data-lucide="settings" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Configuration</span>
+      </a>
+    </nav>
+
+    <!-- Nav items - User -->
+    <nav class="flex-1 px-3 py-4 space-y-1" sec:authorize="hasRole('USER') and !hasRole('ADMIN')">
+      <p class="nav-label text-[10px] uppercase font-semibold text-gray-500 px-2 mb-2 tracking-widest">My Account</p>
+      <a href="/user/dashboard"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
+        <i data-lucide="home" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/user/transactions/new"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
+        <i data-lucide="send" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">New Transaction</span>
+      </a>
+      <a href="/user/transactions"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
+        <i data-lucide="list" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Transactions</span>
+      </a>
+      <a href="/user/alerts"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
+        <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="nav-label">Alerts</span>
+        <span id="sidebar-alert-badge" class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+      </a>
+    </nav>
+
+    <!-- Bottom user info -->
+    <div class="border-t border-white/5 p-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+          <i data-lucide="user" class="w-4 h-4 text-white"></i>
+        </div>
+        <div class="user-info min-w-0">
+          <p class="text-sm font-medium text-white truncate" th:text="${currentUser}">user@example.com</p>
+          <p class="text-xs text-gray-500" sec:authentication="principal.authorities[0].authority">Role</p>
+        </div>
+      </div>
+      <a href="/logout" class="user-info flex items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-500/10 w-full" aria-label="Logout">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+  <div class="main-content flex-1 flex flex-col min-w-0" style="margin-left: 0;">
+
+    <!-- Top bar -->
+    <header class="sticky top-0 z-30 flex items-center gap-4 px-6 py-4 border-b border-white/5 bg-[#0a0a0b]/90 backdrop-blur-sm">
+      <!-- Hamburger (mobile) -->
+      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1" aria-label="Toggle sidebar">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+      <!-- Collapse button (desktop) -->
+      <button onclick="collapseSidebar()" class="hidden md:flex text-gray-400 hover:text-white p-1" aria-label="Collapse sidebar">
+        <i data-lucide="panel-left" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex-1 min-w-0">
+        <h1 class="text-lg font-semibold text-white truncate" th:text="${pageTitle}">Page Title</h1>
+        <p class="text-xs text-gray-500 truncate" th:text="${pageSubtitle}">Subtitle</p>
+      </div>
+
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <!-- Contact support -->
+        <button class="hidden sm:flex items-center gap-2 text-sm text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:border-indigo-500/50 hover:text-indigo-400 transition-all">
+          <i data-lucide="headphones" class="w-4 h-4"></i>
+          <span>Support</span>
+        </button>
+
+        <!-- Notification bell -->
+        <button id="bell-btn" onclick="window.location='/user/alerts'" class="relative text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition" aria-label="Alerts">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span id="bell-badge" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+
+        <!-- Theme toggle -->
+        <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-400 hover:text-yellow-400 p-2 rounded-lg hover:bg-white/5 transition" aria-label="Toggle theme">
+          <i data-lucide="sun" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Avatar -->
+        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer" aria-label="User menu">
+          <i data-lucide="user" class="w-4 h-4 text-white"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content slot -->
+    <main class="flex-1 p-6 overflow-x-hidden" id="page-content">
+      <th:block th:insert="${content}"></th:block>
+    </main>
+  </div>
+</div>
+
+<script>
+  // ── Lucide Icons init ──
+  lucide.createIcons();
+
+  // ── Sidebar collapse (desktop) ──
+  function collapseSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+
+  // ── Mobile sidebar toggle ──
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('mobile-overlay');
+    sb.classList.toggle('open');
+    ov.classList.toggle('hidden');
+  }
+
+  // ── Toast notifications ──
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    const icons = { success: 'check-circle', error: 'x-circle', warn: 'alert-triangle' };
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}" style="width:18px;height:18px;flex-shrink:0"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    lucide.createIcons();
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.4s';
+      setTimeout(() => toast.remove(), 400);
+    }, 4000);
+  }
+
+  // ── Flash messages & Active nav ──
+  document.addEventListener('DOMContentLoaded', () => {
+    const successEl = document.getElementById('flash-success');
+    const errorEl = document.getElementById('flash-error');
+    if (successEl) showToast(successEl.dataset.msg, 'success');
+    if (errorEl) showToast(errorEl.dataset.msg, 'error');
+
+    // Highlight active nav item
+    const path = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && (path === href || (href !== '/user/dashboard' && href !== '/admin/dashboard' && path.startsWith(href)))) {
+        link.classList.add('bg-indigo-600/20', 'text-indigo-400', 'border-l-2', 'border-indigo-500');
+        link.classList.remove('text-gray-400');
+      }
+    });
+  });
+
+  // ── Dark/Light theme toggle ──
+  function toggleTheme() {
+    const body = document.body;
+    const isDark = !body.classList.contains('light-mode');
+    body.classList.toggle('light-mode', isDark);
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    lucide.createIcons();
+  }
+  // Restore saved theme
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
+  }
+
+  // ── Alert polling (user pages) ──
+  function pollAlerts() {
+    fetch('/user/alerts/poll')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const badge = document.getElementById('bell-badge');
+        const sidebarBadge = document.getElementById('sidebar-alert-badge');
+        if (data.unread > 0) {
+          if (badge) { badge.textContent = data.unread; badge.classList.remove('hidden'); }
+          if (sidebarBadge) { sidebarBadge.textContent = data.unread; sidebarBadge.classList.remove('hidden'); }
+          // Show toast for new alert
+          if (data.newAlerts && data.newAlerts.length > 0) {
+            const a = data.newAlerts[0];
+            showToast(`⚠ New alert: ₹${a.amount} at ${a.merchant} — Score: ${a.fraudScore}`, 'warn');
+          }
+        } else {
+          if (badge) badge.classList.add('hidden');
+          if (sidebarBadge) sidebarBadge.classList.add('hidden');
+        }
+      })
+      .catch(() => {}); // silently fail if not a user page
+  }
+
+  // Poll every 15 seconds
+  setInterval(pollAlerts, 15000);
+  // Initial poll after 2s
+  setTimeout(pollAlerts, 2000);
+</script>
+
+</body>
+</html>
