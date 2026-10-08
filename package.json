@@ -1,0 +1,25 @@
+{
+  "name": "ai-powered-fraud-detection-system",
+  "version": "1.0.0",
+  "description": "AI-Powered Real-Time Fraud Detection System with Spring Boot backend, Thymeleaf UI, Tailwind CSS, and ML-driven risk scoring.",
+  "main": "src/main/resources/templates/layout/main.html",
+  "scripts": {
+    "dev": "mvn spring-boot:run",
+    "start": "mvn spring-boot:run",
+    "build": "mvn clean package -DskipTests",
+    "test": "mvn test"
+  },
+  "keywords": [
+    "fraud-detection",
+    "ai",
+    "machine-learning",
+    "spring-boot",
+    "thymeleaf",
+    "tailwind-css",
+    "fintech",
+    "security"
+  ],
+  "author": "",
+  "license": "MIT",
+  "private": true
+}
