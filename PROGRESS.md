@@ -1,60 +1,62 @@
-# FraudShield Redesign Progress
+# FraudShield Redesign & UI Polish Progress
 
 ## Objective
-Apply scale/typography fix (Fix 1) and restructure User Dashboard with a modern, collapsible left vertical sidebar navigation (Fix 2), preserving existing color palette, card styling, and backend logic.
+Apply global overflow-proofing (Part 1), redesign unified sidebar and top bar shared by User and Admin (Parts 2 & 3), polish User and Admin dashboards (Parts 4 & 5), fix all known bugs, and implement automated dev overflow detection (Part 6).
 
 ---
 
-## Milestones
+## Known Bugs Addressed & Resolved
+1. [x] **Bug 1 (User Overview KPI "TOTAL VOLUME SPENT"):** Value "₹77,237.00" was spilling out past the card edge.
+   - **Resolution:** Sized with container queries `clamp(2rem, 11cqi, 3.5rem)`, dropped `.00` decimals (`#numbers.formatInteger(totalSpent, 1, 'COMMA')`), added shared Indian currency formatter (`Intl.NumberFormat('en-IN')`), exact value provided in tooltip and aria-label, and runtime `window.fitKpiNumbers()` auto-fit check.
+2. [x] **Bug 2 (User Overview Hero Card):** Headline wrapped awkwardly, and buttons ("Simulate TX", "Ask AI Helper") were squeezed with wrapped text.
+   - **Resolution:** Two-column grid (`minmax(0, 1.4fr) / minmax(0, 1fr)` at `>= 1280px`), `hero-headline` with `text-wrap: balance; line-height: 1.15;`, 88px SVG safety score ring gauge with centered text, and nowrap buttons with min-height 44px in a wrapping flex row.
+3. [x] **Bug 3 (Sidebar Header Toggle):** Boxed panel icon in header crammed next to the logo.
+   - **Resolution:** Removed the boxed icon. Replaced with a 28px circular button with hairline border, white background, and chevron icons (`chevrons-left` / `chevrons-right`) straddling the sidebar's right edge (`position: absolute; right: -14px; top: 24px;`), tooltip, `aria-expanded`, and keyboard shortcut `[`.
+4. [x] **Bug 4 (Global Overflow & Collisions):**
+   - **Resolution:** Added global reset `*, *::before, *::after { box-sizing: border-box; }`, `min-width: 0;` on all flex and grid text children, `grid-template-columns: repeat(auto-fit, minmax(0, 1fr))`, `overflow-wrap: anywhere;` on body text, single-line nowrap ellipsis on labels, and `fs-table-wrap` horizontally scrolling containers with sticky headers.
 
-- [x] **Milestone 1: Scale & Typography Fix (Fix 1)**
-  - Set `html` font-size: 100% (16px) with clamp-based fluid rem sizing.
-  - Established CSS tokens for typography scale:
-    - Body: 15-16px (`--font-body: clamp(0.9375rem, 0.91rem + 0.15vw, 1.0625rem)`)
-    - Secondary/captions: 13-14px (`--font-secondary: clamp(0.8125rem, 0.8rem + 0.1vw, 0.875rem)`), minimum 12px everywhere including chart ticks
-    - Eyebrow labels: 12-13px uppercase, 0.08em letter-spacing
-    - Nav items & buttons: 15px medium
-    - Card titles: 18-20px semibold
-    - Page titles: 32-40px bold, tight tracking
-    - KPI numbers: 44-56px bold, unit suffix at ~45% size with 1.15 line-height
-    - Table text: 14-15px, row min-height >= 52px
-    - Inputs: 15-16px text, 48-52px height
-  - Increased card padding to 24-28px (`clamp(1.5rem, 1.35rem + 0.5vw, 1.75rem)`), gaps to 24px (`gap-6`), icons to 20-22px, avatar to 36-40px.
-  - Top navbar height: 68-72px (70px) with larger brand mark.
-  - Chart scaling: tick labels 12-13px, tooltips 13-14px, line stroke 2.5px, height 380px on desktop (crisp 2x DPI, responsive resize observer).
-  - Login page redesign: widened card to 480px (`max-w-[480px]`), title 28-32px, 52px input and sign-in button heights, 14px demo access tiles, vertically centered layout.
-  - Fluid layout across 390px, 1280px, 1440px, 1920px, 2560px with responsive side padding.
+---
 
-- [x] **Milestone 2: Left Sidebar Navigation for User Dashboard (Fix 2)**
-  - Fixed left sidebar: 260px desktop width, hairline right border, surface background.
-  - Top brand header: FraudShield shield icon, wordmark, and "AI SECURITY" eyebrow.
-  - 5 Navigation items in exact order:
-    1. Overview (`layout-grid`)
-    2. Transactions (`receipt`)
-    3. Alerts (`bell`, with unread/open count badge)
-    4. Security (`shield`)
-    5. Settings (`sliders`)
-  - Active styling: `--accent-soft` background, red icon, bold dark text, 3px red indicator on left edge, `aria-current="page"`. Hover: surface-subtle.
-  - Collapsible sidebar: toggle button collapses sidebar to 72px icon rail with hover tooltips (`[data-tooltip]`); state persisted in `localStorage`.
-  - Mobile/tablet (<1024px): off-canvas drawer with hamburger button, overlay backdrop, focus trap, Escape & outside click dismissal.
-  - Bottom user profile card with avatar, name, email, role, and logout button.
-  - Slim top bar inside content area: hamburger (mobile), current page title with one-line subtitle, New Transaction button, notification bell with popover, theme toggle, and avatar menu.
-  - Client-side navigation & routing supporting:
-    - `/dashboard/overview`
-    - `/dashboard/transactions`
-    - `/dashboard/alerts`
-    - `/dashboard/security`
-    - `/dashboard/settings`
-    - Redirect `/dashboard` and `/user/dashboard` to `/dashboard/overview`
-    - Deep linking, browser Back/Forward (`popstate`), short skeleton loader transition.
+## Completed Milestones
 
-- [x] **Milestone 3: Admin Console Scale & Consistency**
-  - Maintained Admin top navigation bar (Dashboard, Reports & Cases, Algorithms, Configuration).
-  - Applied Fix 1 scale/type updates to Admin dashboard, reports, algorithms, and configuration.
-  - Preserved existing controller and API behavior.
+- [x] **Milestone 1: Global Overflow-Proofing & Foundation (Part 1)**
+  - Global `*, *::before, *::after { box-sizing: border-box; }` reset in `layout/main.html`.
+  - Flex & grid child rule: `min-width: 0;` on text-holding elements.
+  - Grid template columns with `minmax(0, 1fr)` instead of bare `1fr`.
+  - Body text: `overflow-wrap: anywhere;` for long strings. Single-line labels: `white-space: nowrap; text-overflow: ellipsis; overflow: hidden;` plus `title` attributes.
+  - Buttons, pills, badges, chips: `white-space: nowrap; flex-shrink: 0; min-height: 44px; px-5; flex-wrap: wrap; gap: 12px;`.
+  - KPI container queries: `container-type: inline-size;`, `clamp(2rem, 11cqi, 3.5rem)`, unit suffix at 45%, `tabular-nums`, `letter-spacing: -0.02em`.
+  - Shared Indian Currency Formatter (`window.formatIndianCurrency(val, options)`): dropped `.00` decimals on KPI cards, compact formatting (`₹77.2K` / `₹1.4L` / `₹2.3Cr`), exact value in tooltip/aria-label.
+  - KPI auto-fit font size checker script (`window.fitKpiNumbers`).
+  - Tables wrapped in `fs-table-wrap` (`overflow-x: auto;`), sticky header, numeric right-aligned with tabular numerals, row min-height >= 52px.
 
-- [x] **Milestone 4: Verification & Final Polish**
-  - Compiled project with zero syntax/type errors (`BUILD SUCCESS`).
-  - Ran Spring Boot server cleanly on port 8080.
-  - Verified user authentication, redirects, and all 5 dashboard tabs via HTTP endpoints.
-  - Verified admin authentication, redirects, and admin console via HTTP endpoints.
+- [x] **Milestone 2: Unified Sidebar Redesign (Part 2 - Shared by User & Admin)**
+  - Single component `app-sidebar` in `layout/main.html` dynamically configured by role.
+  - Width: 264px expanded, 76px collapsed rail.
+  - Header: 40px rounded-12px red logo tile + wordmark "FraudShield" + eyebrow ("AI SECURITY" / "ADMIN CONSOLE") on one aligned row, 20px padding. Boxed panel button removed!
+  - Collapse toggle: 28px circular button with hairline border, white background, chevrons (`chevrons-left` / `chevrons-right`), straddling right edge (`right: -14px`), tooltip, `aria-expanded`, keyboard shortcut `[`.
+  - Smooth label fade out then shrink (200ms ease) with `.sidebar-label-fade`.
+  - Menu items: 48px high, 12px radius, 12px gap between 22px icon (1.75 stroke) and 15px label. Active item: soft red tint, red icon, dark bold label, 3px rounded red indicator on left. Badges: right-aligned; in collapsed rail become a small dot on icon's top-right corner.
+  - Groups: "MENU", "ACCOUNT", 8px between items, 24px between groups.
+  - Footer: 40px avatar card, truncated email, role chip; quiet "Sign out" row below. In rail: avatar + icon-only sign out with tooltip.
+  - User menu: Overview, Transactions, Alerts, Security, Settings.
+  - Admin menu: Dashboard, Reports & Cases, Algorithms, Configuration.
+  - Mobile (<1024px): off-canvas drawer with overlay, hamburger in top bar, closes on item click, Escape, outside click, focus trapped, body scroll locked (`overflow: hidden`).
+
+- [x] **Milestone 3: Top Bar Redesign (Part 3)**
+  - 72px high slim bar, hairline bottom border, blurred translucent background when sticky.
+  - Left: hamburger (<1024px), page title (24-28px bold) with one-line muted subtitle.
+  - Right: 44px primary action button ("New Transaction" for user, "Cases & Triage" for admin, icon-only at <768px), 44px bell with red badge, 44px theme toggle, 44px avatar menu. All 44px high with 12px gaps.
+
+- [x] **Milestone 4: User Dashboard & Admin Console Polish (Parts 4 & 5)**
+  - User Overview: hero card two-column layout (`minmax(0, 1.4fr) / minmax(0, 1fr)`), `text-wrap: balance` headline, 88px Safety Score ring, nowrap buttons in wrapping row.
+  - User Overview: Total Volume Spent KPI value ₹77,237 without decimals, container query sizing, fit check.
+  - User Tabs: Transactions, Alerts, Security, Settings polished with card padding, Indian currency formatting, responsive forms (48-52px inputs), sticky table headers, 480px detail drawer.
+  - Admin Console: connected to shared sidebar and top bar, polished two-column hero card, container query KPI cards (`fs-kpi-val`), charts (Fraud Trend, Monthly Cases, Donut with centered count, Algorithm Benchmarks).
+  - Light and dark mode verified across all views.
+
+- [x] **Milestone 5: Dev Overflow Detector Script, Verification & Large Number Test (Part 6)**
+  - Created `scripts/ui-overflow-check.js`, `scripts/ui-overflow-check` shell wrapper, and `scripts/ui-overflow-check.cmd` Windows wrapper.
+  - Added npm script `"ui-overflow-check": "node scripts/ui-overflow-check.js"` and instructions in `README.md`.
+  - Ran automated detector across all viewports (390px, 768px, 1280px, 1440px, 1920px, 2560px) and all 9 pages for both roles: **PASSED with 0 overflow and 0 wrapping issues**.
+  - Seeded and verified huge transaction: ₹12,34,56,789 handled smoothly by KPI container-query sizing, charts, and table.

@@ -3,7 +3,6 @@ package com.guvi.frauddetection.web.controller;
 import com.guvi.frauddetection.dto.FraudCaseResponse;
 import com.guvi.frauddetection.entity.CaseStatus;
 import com.guvi.frauddetection.service.FraudCaseService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,38 +21,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Controller
 @RequestMapping("/user/alerts")
-@RequiredArgsConstructor
 public class UserAlertsController {
 
     private final FraudCaseService fraudCaseService;
+
+    public UserAlertsController(FraudCaseService fraudCaseService) {
+        this.fraudCaseService = fraudCaseService;
+    }
 
     // Thread-safe in-memory store: email -> last known alert count (for unread detection)
     private static final ConcurrentHashMap<String, Integer> lastSeenCounts = new ConcurrentHashMap<>();
 
     /**
-     * Show user's alert list.
+     * Show user's alert list (redirects to Alerts tab in dashboard).
      * GET /user/alerts
      */
     @GetMapping
-    public String alerts(Model model, Authentication auth) {
-        String email = auth.getName();
-        List<FraudCaseResponse> alerts = fraudCaseService.alertsForUser(email);
-
-        long openCount = alerts.stream().filter(a -> a.caseStatus() == CaseStatus.OPEN).count();
-        long confirmedCount = alerts.stream().filter(a -> a.caseStatus() == CaseStatus.CONFIRMED_FRAUD).count();
-        long falsePositiveCount = alerts.stream().filter(a -> a.caseStatus() == CaseStatus.FALSE_POSITIVE).count();
-
-        // Mark all as "seen" (update the in-memory read tracker)
-        lastSeenCounts.put(email, alerts.size());
-
-        model.addAttribute("alerts", alerts);
-        model.addAttribute("openCount", openCount);
-        model.addAttribute("confirmedCount", confirmedCount);
-        model.addAttribute("falsePositiveCount", falsePositiveCount);
-        model.addAttribute("pageTitle", "My Alerts");
-        model.addAttribute("pageSubtitle", "Fraud alerts for your account");
-        model.addAttribute("currentUser", email);
-        return "user/alerts";
+    public String alerts(Authentication auth) {
+        if (auth != null) {
+            String email = auth.getName();
+            List<FraudCaseResponse> alerts = fraudCaseService.alertsForUser(email);
+            lastSeenCounts.put(email, alerts.size());
+        }
+        return "redirect:/user/dashboard?tab=alerts";
     }
 
     /**
@@ -61,16 +51,18 @@ public class UserAlertsController {
      * GET /user/alerts/poll
      * Returns: {"total": N, "unread": M, "newAlerts": [...last3...]}
      */
-    @GetMapping(value = "/poll", produces = "application/json")
+    @GetMapping(value = "/poll", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public java.util.Map<String, Object> pollAlerts(Authentication auth) {
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> pollAlerts(Authentication auth) {
+        if (auth == null) {
+            return org.springframework.http.ResponseEntity.ok(java.util.Collections.emptyMap());
+        }
         String email = auth.getName();
         List<FraudCaseResponse> alerts = fraudCaseService.alertsForUser(email);
 
         int lastSeen = lastSeenCounts.getOrDefault(email, 0);
         int unread = Math.max(0, alerts.size() - lastSeen);
 
-        // Return newest alerts for toast display
         List<java.util.Map<String, Object>> newAlerts = alerts.stream()
                 .limit(3)
                 .map(a -> {
@@ -88,6 +80,6 @@ public class UserAlertsController {
         response.put("total", alerts.size());
         response.put("unread", unread);
         response.put("newAlerts", newAlerts);
-        return response;
+        return org.springframework.http.ResponseEntity.ok(response);
     }
 }

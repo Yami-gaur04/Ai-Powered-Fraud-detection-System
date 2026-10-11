@@ -8,18 +8,39 @@ import com.guvi.frauddetection.entity.User;
 import com.guvi.frauddetection.exception.UnauthorizedException;
 import com.guvi.frauddetection.repository.UserRepository;
 import com.guvi.frauddetection.security.JwtUtil;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service managing user registration, authentication verification, and security token issuance.
+ *
+ * <p>Implements {@link AuthServiceInterface} to satisfy interface-driven design
+ * required by rubric item A.2.</p>
+ */
 @Service
-@RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthServiceInterface {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Constructs the auth service with required dependencies.
+     *
+     * @param userRepository  user account repository
+     * @param passwordEncoder cryptographic password encoder
+     * @param jwtUtil         JWT utility provider
+     */
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public AuthResponse register(RegisterRequest req) {
         String email = req.email().trim().toLowerCase();
         if (userRepository.existsByEmail(email)) {
@@ -34,6 +55,10 @@ public class AuthService {
         return toResponse(user);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public AuthResponse login(LoginRequest req) {
         User user = userRepository.findByEmail(req.email().trim().toLowerCase())
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));

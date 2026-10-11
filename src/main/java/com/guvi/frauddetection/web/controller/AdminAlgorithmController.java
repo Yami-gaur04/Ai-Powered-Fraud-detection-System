@@ -3,7 +3,6 @@ package com.guvi.frauddetection.web.controller;
 import com.guvi.frauddetection.dto.AlgorithmUpdateRequest;
 import com.guvi.frauddetection.entity.AlgorithmVersion;
 import com.guvi.frauddetection.service.AlgorithmService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,10 +17,13 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/admin/algorithms")
-@RequiredArgsConstructor
 public class AdminAlgorithmController {
 
     private final AlgorithmService algorithmService;
+
+    public AdminAlgorithmController(AlgorithmService algorithmService) {
+        this.algorithmService = algorithmService;
+    }
 
     /**
      * Show list of algorithm versions and performance chart data.
@@ -30,8 +32,13 @@ public class AdminAlgorithmController {
     @GetMapping
     public String algorithmsPage(Model model, Authentication auth) {
         List<AlgorithmVersion> versions = algorithmService.listVersions();
+        AlgorithmVersion active = versions.stream()
+                .filter(v -> Boolean.TRUE.equals(v.getActive()))
+                .findFirst()
+                .orElse(versions.isEmpty() ? null : versions.get(0));
 
         model.addAttribute("versions", versions);
+        model.addAttribute("activeAlgorithm", active);
         model.addAttribute("pageTitle", "Algorithm Management");
         model.addAttribute("pageSubtitle", "Monitor and refine detection algorithms with feedback");
         model.addAttribute("currentUser", auth.getName());

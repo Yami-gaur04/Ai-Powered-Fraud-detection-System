@@ -9,7 +9,6 @@ import com.guvi.frauddetection.repository.UserRepository;
 import com.guvi.frauddetection.service.AlgorithmService;
 import com.guvi.frauddetection.service.FraudCaseService;
 import com.guvi.frauddetection.service.ReportService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,13 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
-/**
- * Admin dashboard web controller.
- * Calls existing backend services; no business logic duplicated here.
- */
 @Controller
 @RequestMapping("/admin")
-@RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final ReportService reportService;
@@ -32,6 +26,18 @@ public class AdminDashboardController {
     private final AlgorithmService algorithmService;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+
+    public AdminDashboardController(ReportService reportService,
+                                    FraudCaseService fraudCaseService,
+                                    AlgorithmService algorithmService,
+                                    TransactionRepository transactionRepository,
+                                    UserRepository userRepository) {
+        this.reportService = reportService;
+        this.fraudCaseService = fraudCaseService;
+        this.algorithmService = algorithmService;
+        this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
+    }
 
     /**
      * Admin dashboard: shows KPI cards and summary charts.

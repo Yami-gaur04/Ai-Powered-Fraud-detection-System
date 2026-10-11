@@ -5,92 +5,97 @@ import com.guvi.frauddetection.entity.Transaction;
 import com.guvi.frauddetection.entity.TransactionStatus;
 import com.guvi.frauddetection.entity.User;
 import com.guvi.frauddetection.repository.TransactionRepository;
-import lombok.RequiredArgsConstructor;
+import com.guvi.frauddetection.rule.CompositeFraudEngine;
+import com.guvi.frauddetection.rule.CompositeFraudEngine.CompositeEvaluationResult;
+import com.guvi.frauddetection.rule.RuleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * Weighted rule-based anomaly scoring. Each factor produces a risk between 0 and 1,
- * the final score is the weighted average (0 to 1). Thresholds come from DetectionConfig.
- *
- * To plug in a real ML model later, replace the body of evaluate() (for example call
- * a Python model service over HTTP) and keep returning a Result.
+ * High-level orchestration service for fraud detection evaluation.
+ * Constructs telemetry {@link RuleContext} from transaction repositories
+ * and delegates to {@link CompositeFraudEngine} for polymorphic rule execution.
  */
 @Service
-@RequiredArgsConstructor
 public class FraudDetectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(FraudDetectionService.class);
 
     private final TransactionRepository transactionRepository;
     private final ConfigService configService;
+    private final CompositeFraudEngine compositeFraudEngine;
 
-    public record Result(double score, TransactionStatus status, List<String> reasons) {}
-
-    /** Call BEFORE saving the new transaction so it is not counted in its own history. */
-    public Result evaluate(User user, Transaction tx) {
-        DetectionConfig c = configService.getConfig();
-        List<String> reasons = new ArrayList<>();
-        Long userId = user.getId();
-        boolean hasHistory = transactionRepository.countByUserId(userId) > 0;
-
-        // 1) Amount risk
-        double amount = tx.getAmount().doubleValue();
-        double limit = c.getHighAmountLimit().doubleValue();
-        double amountRisk = Math.min(1.0, amount / limit);
-        if (amount > limit) {
-            reasons.add("Amount exceeds the high-value limit");
-        }
-        Double avg = transactionRepository.findAverageAmountByUserId(userId);
-        if (avg != null && avg > 0 && amount > 3 * avg) {
-            amountRisk = Math.max(amountRisk, 0.8);
-            reasons.add("Amount is more than 3x the user's average spend");
-        }
-
-        // 2) Velocity risk (transactions in the last hour, including this one)
-        long recent = transactionRepository.countByUserIdAndTransactionTimeAfter(
-                userId, tx.getTransactionTime().minusHours(1)) + 1;
-        double velocityRisk = Math.min(1.0, (double) recent / c.getMaxTxPerHour());
-        if (recent >= c.getMaxTxPerHour()) {
-            reasons.add("High transaction frequency (" + recent + " in the last hour)");
-        }
-
-        // 3) New location / 4) new device (only meaningful once the user has history)
-        double locationRisk = 0;
-        double deviceRisk = 0;
-        if (hasHistory) {
-            if (!transactionRepository.existsByUserIdAndLocationIgnoreCase(userId, tx.getLocation())) {
-                locationRisk = 1;
-                reasons.add("Transaction from a new location");
-            }
-            if (!transactionRepository.existsByUserIdAndDeviceId(userId, tx.getDeviceId())) {
-                deviceRisk = 1;
-                reasons.add("Transaction from a new device");
-            }
-        }
-
-        double wA = nz(c.getAmountWeight());
-        double wV = nz(c.getVelocityWeight());
-        double wL = nz(c.getLocationWeight());
-        double wD = nz(c.getDeviceWeight());
-        double totalWeight = wA + wV + wL + wD;
-
-        double score = totalWeight == 0 ? 0
-                : (amountRisk * wA + velocityRisk * wV + locationRisk * wL + deviceRisk * wD) / totalWeight;
-        score = Math.round(score * 10000.0) / 10000.0;
-
-        TransactionStatus status;
-        if (score >= c.getBlockThreshold()) {
-            status = TransactionStatus.BLOCKED;
-        } else if (score >= c.getFlagThreshold()) {
-            status = TransactionStatus.FLAGGED;
-        } else {
-            status = TransactionStatus.APPROVED;
-        }
-        return new Result(score, status, reasons);
+    public FraudDetectionService(TransactionRepository transactionRepository,
+                                 ConfigService configService,
+                                 CompositeFraudEngine compositeFraudEngine) {
+        this.transactionRepository = transactionRepository;
+        this.configService = configService;
+        this.compositeFraudEngine = compositeFraudEngine;
     }
 
-    private double nz(Double d) {
-        return d == null ? 0 : d;
+    /**
+     * Backward-compatible evaluation result record.
+     */
+    public record Result(double score, TransactionStatus status, List<String> reasons) {}
+
+    /**
+     * Evaluates a candidate transaction against historical user patterns and active thresholds.
+     * Must be invoked BEFORE persisting the new transaction to preserve history boundary.
+     *
+     * @param user cardholder entity
+     * @param tx   candidate transaction
+     * @return {@link Result} containing calculated score, decision status, and anomaly reasons
+     */
+    public Result evaluate(User user, Transaction tx) {
+        DetectionConfig config = configService.getConfig();
+        Long userId = user != null ? user.getId() : 0L;
+
+        // Fetch historical transactions
+        List<Transaction> history = (userId != null && userId > 0)
+                ? transactionRepository.findByUserIdOrderByTransactionTimeDesc(userId)
+                : Collections.emptyList();
+
+        long historyCount = history.size();
+        Double avgSpend = transactionRepository.findAverageAmountByUserId(userId);
+
+        Set<String> knownLocations = history.stream()
+                .map(Transaction::getLocation)
+                .filter(l -> l != null && !l.isBlank())
+                .collect(Collectors.toSet());
+
+        Set<String> knownDevices = history.stream()
+                .map(Transaction::getDeviceId)
+                .filter(d -> d != null && !d.isBlank())
+                .collect(Collectors.toSet());
+
+        LocalDateTime oneHourAgo = (tx.getTransactionTime() != null ? tx.getTransactionTime() : LocalDateTime.now()).minusHours(1);
+        List<LocalDateTime> recentTimes = history.stream()
+                .map(Transaction::getTransactionTime)
+                .filter(t -> t != null && t.isAfter(oneHourAgo))
+                .toList();
+
+        RuleContext context = new RuleContext(
+                userId,
+                config,
+                avgSpend,
+                historyCount,
+                knownLocations,
+                knownDevices,
+                recentTimes,
+                history
+        );
+
+        CompositeEvaluationResult compResult = compositeFraudEngine.evaluate(tx, context);
+        log.info("Fraud evaluation complete for user {}: score={}, status={}, reasons={}",
+                userId, compResult.getOverallScore(), compResult.getStatus(), compResult.getReasons());
+
+        return new Result(compResult.getOverallScore(), compResult.getStatus(), compResult.getReasons());
     }
 }

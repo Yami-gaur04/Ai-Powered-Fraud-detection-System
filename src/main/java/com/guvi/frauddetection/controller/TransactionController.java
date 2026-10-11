@@ -6,7 +6,6 @@ import com.guvi.frauddetection.dto.TransactionResponse;
 import com.guvi.frauddetection.service.FraudCaseService;
 import com.guvi.frauddetection.service.TransactionService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,14 +13,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** User side: Transaction Monitoring + Transaction Alerts. */
 @RestController
 @RequestMapping("/api/transactions")
-@RequiredArgsConstructor
 public class TransactionController {
 
     private final TransactionService transactionService;
     private final FraudCaseService fraudCaseService;
+
+    public TransactionController(TransactionService transactionService, FraudCaseService fraudCaseService) {
+        this.transactionService = transactionService;
+        this.fraudCaseService = fraudCaseService;
+    }
 
     @PostMapping
     public ResponseEntity<TransactionResponse> create(@Valid @RequestBody TransactionRequest req,

@@ -4,7 +4,6 @@ import com.guvi.frauddetection.dto.FraudCaseResponse;
 import com.guvi.frauddetection.dto.ReviewRequest;
 import com.guvi.frauddetection.entity.CaseStatus;
 import com.guvi.frauddetection.service.FraudCaseService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,10 +19,13 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/admin/reports")
-@RequiredArgsConstructor
 public class AdminReportsController {
 
     private final FraudCaseService fraudCaseService;
+
+    public AdminReportsController(FraudCaseService fraudCaseService) {
+        this.fraudCaseService = fraudCaseService;
+    }
 
     private static final int PAGE_SIZE = 10;
 

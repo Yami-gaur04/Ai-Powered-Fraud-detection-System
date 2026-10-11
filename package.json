@@ -7,7 +7,8 @@
     "dev": "mvn spring-boot:run",
     "start": "mvn spring-boot:run",
     "build": "mvn clean package -DskipTests",
-    "test": "mvn test"
+    "test": "mvn test",
+    "ui-overflow-check": "node scripts/ui-overflow-check.js"
   },
   "keywords": [
     "fraud-detection",

@@ -1,34 +1,88 @@
 package com.guvi.frauddetection.web.controller;
 
 import com.guvi.frauddetection.dto.FraudCaseResponse;
+import com.guvi.frauddetection.dto.TransactionResponse;
 import com.guvi.frauddetection.entity.AlgorithmVersion;
 import com.guvi.frauddetection.entity.CaseStatus;
+import com.guvi.frauddetection.entity.TransactionStatus;
 import com.guvi.frauddetection.service.AlgorithmService;
 import com.guvi.frauddetection.service.FraudCaseService;
-import lombok.RequiredArgsConstructor;
+import com.guvi.frauddetection.service.TransactionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
-/**
- * JSON REST endpoints consumed by Chart.js in the Thymeleaf views.
- * Returns chart data for fraud trend, monthly cases, algorithm performance,
- * and status distribution.
- *
- * These are NOT protected by JWT — they use the web session.
- */
 @RestController
-@RequestMapping("/api/charts")
-@RequiredArgsConstructor
+@RequestMapping(value = "/api/charts", produces = "application/json")
 public class ChartDataController {
 
     private final FraudCaseService fraudCaseService;
     private final AlgorithmService algorithmService;
+    private final TransactionService transactionService;
+
+    public ChartDataController(FraudCaseService fraudCaseService,
+                               AlgorithmService algorithmService,
+                               TransactionService transactionService) {
+        this.fraudCaseService = fraudCaseService;
+        this.algorithmService = algorithmService;
+        this.transactionService = transactionService;
+    }
+
+    /**
+     * User personal trend over last N days (area chart: Spending vs Flagged/Rescued).
+     * GET /api/charts/user-trend?days=30
+     */
+    @GetMapping("/user-trend")
+    public ResponseEntity<Map<String, Object>> userTrend(
+            @RequestParam(defaultValue = "30") int days,
+            Authentication auth) {
+
+        String email = auth != null ? auth.getName() : "demo@fraudshield.io";
+        List<TransactionResponse> myTx = transactionService.myTransactions(email);
+
+        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("MMM dd");
+        LinkedHashMap<String, BigDecimal> spendingMap = new LinkedHashMap<>();
+        LinkedHashMap<String, BigDecimal> flaggedMap = new LinkedHashMap<>();
+
+        LocalDate today = LocalDate.now();
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDate d = today.minusDays(i);
+            String key = d.format(dayFmt);
+            spendingMap.put(key, BigDecimal.ZERO);
+            flaggedMap.put(key, BigDecimal.ZERO);
+        }
+
+        for (TransactionResponse t : myTx) {
+            if (t.transactionTime() != null) {
+                LocalDate d = t.transactionTime().toLocalDate();
+                if (!d.isBefore(today.minusDays(days))) {
+                    String key = d.format(dayFmt);
+                    BigDecimal currentSpend = spendingMap.getOrDefault(key, BigDecimal.ZERO);
+                    spendingMap.put(key, currentSpend.add(t.amount() != null ? t.amount() : BigDecimal.ZERO));
+
+                    if (t.status() == TransactionStatus.FLAGGED || t.status() == TransactionStatus.BLOCKED) {
+                        BigDecimal currentFlag = flaggedMap.getOrDefault(key, BigDecimal.ZERO);
+                        flaggedMap.put(key, currentFlag.add(t.amount() != null ? t.amount() : BigDecimal.ZERO));
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("labels", new ArrayList<>(spendingMap.keySet()));
+        result.put("spending", spendingMap.values().stream().map(BigDecimal::doubleValue).toList());
+        result.put("flagged", flaggedMap.values().stream().map(BigDecimal::doubleValue).toList());
+        return ResponseEntity.ok(result);
+    }
 
     /**
      * Fraud trend over last N months (area chart).
@@ -87,9 +141,9 @@ public class ChartDataController {
                 .filter(c -> c.createdAt() != null && c.createdAt().isAfter(now.minusMonths(months)))
                 .forEach(c -> data.merge(c.createdAt().format(monthFmt), 1L, Long::sum));
 
-        // Vibrant colors for each bar
+        // Brand palette colors for bars
         List<String> colors = List.of(
-            "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#8b5cf6"
+            "#C0302B", "#2F6FB5", "#D98A00", "#1E7B3A", "#8A8A90", "#17181C"
         );
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -115,7 +169,8 @@ public class ChartDataController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("labels", List.of("Open", "Confirmed Fraud", "False Positive"));
         result.put("values", new ArrayList<>(counts.values()));
-        result.put("colors", List.of("#f59e0b", "#ef4444", "#10b981"));
+        // Open = amber, Confirmed Fraud = red, False Positive = blue
+        result.put("colors", List.of("#D98A00", "#C0302B", "#2F6FB5"));
         return ResponseEntity.ok(result);
     }
 
@@ -133,7 +188,7 @@ public class ChartDataController {
         List<Double> accuracy = versions.stream()
                 .map(v -> v.getAccuracy() != null ? v.getAccuracy() : 0.0).toList();
         List<String> colors = versions.stream()
-                .map(v -> Boolean.TRUE.equals(v.getActive()) ? "#6366f1" : "#374151").toList();
+                .map(v -> Boolean.TRUE.equals(v.getActive()) ? "#C0302B" : "#8A8A90").toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("labels", labels);

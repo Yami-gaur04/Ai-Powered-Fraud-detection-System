@@ -15,32 +15,32 @@
 
     <!-- 1. Editorial Hero Strip: Headline, Account Health Ring, Quick Actions -->
     <div class="fs-card p-6 sm:p-8">
-      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
 
         <!-- Left: Plain headline and dynamic security statement -->
-        <div class="space-y-2.5 max-w-2xl">
-          <div class="flex items-center gap-2.5">
+        <div class="xl:col-span-7 space-y-3 min-w-0">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <span class="fs-eyebrow">Real-Time Protection Status</span>
-            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--positive)] bg-[var(--positive-soft)] px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--positive)] bg-[var(--positive-soft)] px-3 py-1 rounded-full border border-emerald-500/20 whitespace-nowrap flex-shrink-0">
               <span class="w-1.5 h-1.5 rounded-full bg-[var(--positive)] animate-pulse"></span>
               Live Monitoring
             </span>
           </div>
-          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--ink)] leading-tight" th:text="${headline}">
+          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--ink)] leading-tight hero-headline" th:text="${headline}">
             Your account looks safe. No suspicious activity detected.
           </h2>
-          <p class="text-sm sm:text-base text-[var(--muted)] leading-relaxed" th:text="${insightCallout}">
+          <p class="text-sm sm:text-base text-[var(--muted)] leading-relaxed body-paragraph" th:text="${insightCallout}">
             100% of your transactions this month matched your normal spending profile.
           </p>
         </div>
 
-        <!-- Right: Account Health Gauge & Quick Buttons -->
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-5 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-[var(--border)] pt-4 lg:pt-0">
+        <!-- Right: Account Health Gauge (88px) & Quick Buttons -->
+        <div class="xl:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-start xl:justify-end gap-5 border-t xl:border-t-0 border-[var(--border)] pt-5 xl:pt-0 min-w-0">
 
-          <!-- Account Health Ring Gauge -->
+          <!-- Account Health Ring Gauge (88px) -->
           <div class="flex items-center gap-4 bg-[var(--surface-subtle)] p-3.5 px-5 rounded-2xl border border-[var(--border)] flex-shrink-0">
-            <div class="relative w-16 h-16 flex items-center justify-center">
-              <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+            <div class="relative w-[88px] h-[88px] flex items-center justify-center flex-shrink-0">
+              <svg class="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 36 36">
                 <path class="text-[var(--border)]" stroke-width="3.5" stroke="currentColor" fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 <path class="text-[var(--positive)]" stroke-width="3.5" stroke-dasharray="100, 100"
@@ -49,23 +49,23 @@
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
               </svg>
               <div class="absolute inset-0 flex items-center justify-center flex-col">
-                <span class="text-sm font-bold font-mono text-[var(--ink)] leading-none" th:text="${safetyScore} + '%'">96%</span>
+                <span class="text-base font-bold font-mono text-[var(--ink)] leading-none" th:text="${safetyScore} + '%'">96%</span>
               </div>
             </div>
-            <div>
+            <div class="min-w-0">
               <span class="fs-eyebrow block">Safety Score</span>
-              <span class="text-sm font-bold text-[var(--positive)]">Optimal Status</span>
+              <span class="text-sm font-bold text-[var(--positive)] whitespace-nowrap">Optimal Status</span>
             </div>
           </div>
 
-          <!-- Quick actions buttons -->
-          <div class="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
-            <button onclick="openNewTxModal()" class="btn-primary text-sm py-2.5 justify-center">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Simulate TX</span>
+          <!-- Quick actions buttons (Wrapping row, nowrap text) -->
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <button onclick="openNewTxModal()" class="btn-primary text-sm py-2.5 px-5 justify-center flex-1 sm:flex-initial whitespace-nowrap flex-shrink-0">
+              <i data-lucide="plus" class="w-4 h-4 flex-shrink-0"></i>
+              <span>Simulate Transaction</span>
             </button>
-            <button onclick="openAiModal()" class="btn-secondary text-sm py-2.5 justify-center">
-              <i data-lucide="sparkles" class="w-4 h-4 text-[var(--accent)]"></i>
+            <button onclick="openAiModal()" class="btn-secondary text-sm py-2.5 px-5 justify-center flex-1 sm:flex-initial whitespace-nowrap flex-shrink-0">
+              <i data-lucide="sparkles" class="w-4 h-4 text-[var(--accent)] flex-shrink-0"></i>
               <span>Ask AI Helper</span>
             </button>
           </div>
@@ -74,55 +74,57 @@
       </div>
     </div>
 
-    <!-- 2. KPI STRIP (4 Pillars across fluid width) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- 2. KPI STRIP (4 Pillars across fluid width, Container Query Number Sizing) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
       <!-- 1. Total Transactions -->
       <div class="fs-kpi-strip flex flex-col justify-between">
         <div class="flex items-center justify-between mb-3">
-          <span class="fs-eyebrow">Total Transactions</span>
-          <div class="w-8 h-8 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)]">
-            <i data-lucide="credit-card" class="w-4 h-4"></i>
+          <span class="fs-eyebrow truncate" title="Total Transactions">Total Transactions</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)] flex-shrink-0">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
           </div>
         </div>
-        <div>
-          <div class="fs-kpi-val" th:text="${totalTx}">0</div>
-          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 flex items-center gap-1.5">
+        <div class="min-w-0">
+          <div class="fs-kpi-val" th:text="${#numbers.formatInteger(totalTx, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 flex items-center gap-1.5 truncate">
             <span class="text-[var(--positive)] font-semibold">100% processed</span>
             <span>via AI Shield</span>
           </p>
         </div>
       </div>
 
-      <!-- 2. Total Volume Spent -->
+      <!-- 2. Total Volume Spent (BUG 1 FIX: Dropped .00 decimals, Container Query sized, tooltip with exact) -->
       <div class="fs-kpi-strip flex flex-col justify-between">
         <div class="flex items-center justify-between mb-3">
-          <span class="fs-eyebrow">Total Volume Spent</span>
-          <div class="w-8 h-8 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)]">
-            <i data-lucide="banknote" class="w-4 h-4"></i>
+          <span class="fs-eyebrow truncate" title="Total Volume Spent">Total Volume Spent</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)] flex-shrink-0">
+            <i data-lucide="banknote" class="w-5 h-5"></i>
           </div>
         </div>
-        <div>
-          <div class="fs-kpi-val">
-            <span class="unit-suffix">₹</span><span th:text="${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+        <div class="min-w-0">
+          <div class="fs-kpi-val"
+               th:title="'Exact: ₹' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}"
+               th:attr="aria-label='Total spent ₹' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}">
+            <span class="unit-suffix">₹</span><span th:text="${#numbers.formatInteger(totalSpent, 1, 'COMMA')}">0</span>
           </div>
-          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5">Approved spending volume</p>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate" title="Approved spending volume">Approved spending volume</p>
         </div>
       </div>
 
       <!-- 3. Flagged & Holds -->
       <div class="fs-kpi-strip flex flex-col justify-between">
         <div class="flex items-center justify-between mb-3">
-          <span class="fs-eyebrow">Flagged & Holds</span>
-          <div class="w-8 h-8 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          <span class="fs-eyebrow truncate" title="Flagged & Holds">Flagged & Holds</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
           </div>
         </div>
-        <div>
-          <div class="fs-kpi-val text-[var(--accent)]" th:text="${flaggedCount}">0</div>
-          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5" th:if="${openAlertsCount > 0}">
+        <div class="min-w-0">
+          <div class="fs-kpi-val text-[var(--accent)]" th:text="${#numbers.formatInteger(flaggedCount, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate" th:if="${openAlertsCount > 0}">
             <span class="text-[var(--accent)] font-semibold" th:text="${openAlertsCount} + ' require verification'">1 requires verification</span>
           </p>
-          <p class="text-xs sm:text-sm text-[var(--positive)] mt-1.5 font-medium" th:unless="${openAlertsCount > 0}">
+          <p class="text-xs sm:text-sm text-[var(--positive)] mt-1.5 font-medium truncate" th:unless="${openAlertsCount > 0}">
             All historical holds resolved
           </p>
         </div>
@@ -131,14 +133,14 @@
       <!-- 4. Safe Transactions -->
       <div class="fs-kpi-strip flex flex-col justify-between">
         <div class="flex items-center justify-between mb-3">
-          <span class="fs-eyebrow">Verified Safe</span>
-          <div class="w-8 h-8 rounded-xl bg-[var(--positive-soft)] flex items-center justify-center text-[var(--positive)]">
-            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span class="fs-eyebrow truncate" title="Verified Safe">Verified Safe</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--positive-soft)] flex items-center justify-center text-[var(--positive)] flex-shrink-0">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
           </div>
         </div>
-        <div>
-          <div class="fs-kpi-val text-[var(--positive)]" th:text="${safeTxCount}">0</div>
-          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5">Legitimate transactions cleared</p>
+        <div class="min-w-0">
+          <div class="fs-kpi-val text-[var(--positive)]" th:text="${#numbers.formatInteger(safeTxCount, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate">Legitimate transactions cleared</p>
         </div>
       </div>
     </div>
@@ -856,12 +858,13 @@
             },
             y: {
               grid: { color: gridColor, borderDash: [4, 4] },
+              afterFit: (axis) => { axis.width = Math.max(axis.width, 64); },
               ticks: {
                 color: textColor,
                 font: { family: 'Inter', size: 12 },
                 maxTicksLimit: 5,
-                padding: 8,
-                callback: v => '₹' + Number(v).toLocaleString('en-IN')
+                padding: 10,
+                callback: v => window.formatIndianCurrency(v, { compact: true })
               }
             }
           }

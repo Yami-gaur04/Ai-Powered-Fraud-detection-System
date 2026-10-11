@@ -23,6 +23,14 @@ public record FraudCaseResponse(
         String message,
         LocalDateTime createdAt) {
 
+    public Long getId() {
+        return caseId;
+    }
+
+    public Long getCaseId() {
+        return caseId;
+    }
+
     /** Must be called inside a transaction (touches lazy relations). */
     public static FraudCaseResponse from(FraudCase c, boolean forAdmin) {
         Transaction t = c.getTransaction();

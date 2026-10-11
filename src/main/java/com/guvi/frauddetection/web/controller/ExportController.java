@@ -4,7 +4,6 @@ import com.guvi.frauddetection.dto.FraudCaseResponse;
 import com.guvi.frauddetection.entity.CaseStatus;
 import com.guvi.frauddetection.service.FraudCaseService;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -21,10 +20,13 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/admin/reports/export")
-@RequiredArgsConstructor
 public class ExportController {
 
     private final FraudCaseService fraudCaseService;
+
+    public ExportController(FraudCaseService fraudCaseService) {
+        this.fraudCaseService = fraudCaseService;
+    }
 
     @GetMapping
     public void export(@RequestParam(defaultValue = "csv") String format,

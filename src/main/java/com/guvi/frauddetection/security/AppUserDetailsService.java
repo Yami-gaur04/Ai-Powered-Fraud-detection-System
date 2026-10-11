@@ -2,7 +2,6 @@ package com.guvi.frauddetection.security;
 
 import com.guvi.frauddetection.entity.User;
 import com.guvi.frauddetection.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
@@ -14,10 +13,13 @@ import java.util.List;
  * Returns a UserDetails with ROLE_ADMIN or ROLE_USER authority.
  */
 @Service
-@RequiredArgsConstructor
 public class AppUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+
+    public AppUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {

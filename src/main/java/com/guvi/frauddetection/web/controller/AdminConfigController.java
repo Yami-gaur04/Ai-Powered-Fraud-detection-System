@@ -3,7 +3,6 @@ package com.guvi.frauddetection.web.controller;
 import com.guvi.frauddetection.entity.DetectionConfig;
 import com.guvi.frauddetection.dto.ConfigRequest;
 import com.guvi.frauddetection.service.ConfigService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,10 +17,13 @@ import java.math.BigDecimal;
  */
 @Controller
 @RequestMapping("/admin/config")
-@RequiredArgsConstructor
 public class AdminConfigController {
 
     private final ConfigService configService;
+
+    public AdminConfigController(ConfigService configService) {
+        this.configService = configService;
+    }
 
     /**
      * Display current detection configuration.

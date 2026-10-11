@@ -9,21 +9,28 @@ import com.guvi.frauddetection.service.ConfigService;
 import com.guvi.frauddetection.service.FraudCaseService;
 import com.guvi.frauddetection.service.ReportService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Admin side: System Configuration, Detection Monitoring, Algorithm Updates. */
 @RestController
 @RequestMapping("/api/admin")
-@RequiredArgsConstructor
 public class AdminController {
 
     private final ConfigService configService;
     private final FraudCaseService fraudCaseService;
     private final AlgorithmService algorithmService;
     private final ReportService reportService;
+
+    public AdminController(ConfigService configService,
+                           FraudCaseService fraudCaseService,
+                           AlgorithmService algorithmService,
+                           ReportService reportService) {
+        this.configService = configService;
+        this.fraudCaseService = fraudCaseService;
+        this.algorithmService = algorithmService;
+        this.reportService = reportService;
+    }
 
     // ---- System Configuration ----
     @GetMapping("/config")
