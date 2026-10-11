@@ -3,7 +3,6 @@ package com.guvi.frauddetection.web.controller;
 import com.guvi.frauddetection.dto.RegisterRequest;
 import com.guvi.frauddetection.entity.User;
 import com.guvi.frauddetection.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,11 +14,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * Spring Security's form login handles actual authentication at POST /login.
  */
 @Controller
-@RequiredArgsConstructor
 public class AuthWebController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public AuthWebController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     /** Root URL redirect to dashboard / login. */
     @GetMapping("/")
@@ -83,13 +86,13 @@ public class AuthWebController {
         return "redirect:/login";
     }
 
-    /** Smart redirect: admins go to /admin/dashboard, users to /user/dashboard. */
+    /** Smart redirect: admins go to /admin/dashboard, users to /dashboard/overview. */
     @GetMapping("/dashboard")
     public String dashboard(org.springframework.security.core.Authentication auth) {
         if (auth == null) return "redirect:/login";
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        return isAdmin ? "redirect:/admin/dashboard" : "redirect:/user/dashboard";
+        return isAdmin ? "redirect:/admin/dashboard" : "redirect:/dashboard/overview";
     }
 
     /** Access denied page. */

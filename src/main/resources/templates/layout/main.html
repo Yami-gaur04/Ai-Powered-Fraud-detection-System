@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:fragment="layout(content)">
@@ -19,28 +20,22 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] },
           colors: {
-            brand: {
-              50: '#eef2ff', 100: '#e0e7ff',
-              400: '#818cf8', 500: '#6366f1',
-              600: '#4f46e5', 700: '#4338ca'
-            },
-            dark: {
-              bg: '#0a0a0b', card: '#0f0f11',
-              border: 'rgba(255,255,255,0.08)',
-              text: '#e5e7eb', muted: '#6b7280'
+            app: {
+              bg: 'var(--bg)',
+              surface: 'var(--surface)',
+              subtle: 'var(--surface-subtle)',
+              border: 'var(--border)',
+              ink: 'var(--ink)',
+              muted: 'var(--muted)',
+              label: 'var(--label)',
+              accent: 'var(--accent)',
+              positive: 'var(--positive)',
+              negative: 'var(--negative)',
+              secondary: 'var(--secondary)',
+              warning: 'var(--warning)'
             }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.3s ease-in-out',
-            'slide-in': 'slideIn 0.3s ease-out',
-            'pulse-dot': 'pulseDot 2s infinite'
-          },
-          keyframes: {
-            fadeIn: { '0%': {opacity: '0', transform: 'translateY(-8px)'}, '100%': {opacity: '1', transform: 'translateY(0)'} },
-            slideIn: { '0%': {opacity: '0', transform: 'translateX(-16px)'}, '100%': {opacity: '1', transform: 'translateX(0)'} },
-            pulseDot: { '0%,100%': {opacity:'1'}, '50%': {opacity:'.4'} }
           }
         }
       }
@@ -49,325 +44,1635 @@
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script>
+    if (window.Chart) {
+      // High-DPI crisp rendering on 2x/3x retina & 4k displays
+      Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2);
+      Chart.defaults.font.family = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      Chart.defaults.font.size = 13;
+      Chart.defaults.color = '#6B6B70';
+      Chart.defaults.responsive = true;
+      Chart.defaults.maintainAspectRatio = false;
+      if (Chart.defaults.animation && typeof Chart.defaults.animation === 'object') {
+        Chart.defaults.animation.duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 500;
+        Chart.defaults.animation.easing = 'easeOutQuart';
+      }
+    }
+  </script>
 
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
   <style>
-    body { background-color: #0a0a0b; font-family: 'Inter', sans-serif; }
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    /* 1. GLOBAL ROOT DESIGN TOKENS (SCALE & TYPOGRAPHY FIX)                     */
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    html {
+      font-size: 100%; /* 16px standard base */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
     :root {
-      --bg: #0a0a0b; --card: #0f0f11; --border: rgba(255,255,255,0.08);
-      --text: #e5e7eb; --muted: #6b7280; --brand: #6366f1;
+      /* Palette (Preserved exactly as specified) */
+      --bg: #FBFAF7;
+      --surface: #FFFFFF;
+      --surface-subtle: #F6F5F0;
+      --border: #E8E6E1;
+      --border-subtle: #F0EEE9;
+      --ink: #17181C;
+      --muted: #6B6B70;
+      --label: #8A8A90;
+      --accent: #C0302B;
+      --accent-soft: rgba(192, 48, 43, 0.08);
+      --accent-border: rgba(192, 48, 43, 0.25);
+      --positive: #1E7B3A;
+      --positive-soft: rgba(30, 123, 58, 0.08);
+      --negative: #C0302B;
+      --negative-soft: rgba(192, 48, 43, 0.08);
+      --secondary: #2F6FB5;
+      --secondary-soft: rgba(47, 111, 181, 0.08);
+      --warning: #D98A00;
+      --warning-soft: rgba(217, 138, 0, 0.12);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.09);
+
+      /* Typography Scale (Fluid clamp-based rem sizing, desktop body 15-16px) */
+      --font-body: clamp(0.9375rem, 0.91rem + 0.15vw, 1.0625rem);       /* 15px - 17px */
+      --font-secondary: clamp(0.8125rem, 0.8rem + 0.1vw, 0.875rem);    /* 13px - 14px */
+      --font-eyebrow: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem);      /* 12px - 13px */
+      --font-nav: clamp(0.9375rem, 0.92rem + 0.1vw, 1rem);             /* 15px */
+      --font-btn: clamp(0.9375rem, 0.92rem + 0.1vw, 1rem);             /* 15px */
+      --font-card-title: clamp(1.125rem, 1.05rem + 0.35vw, 1.25rem);   /* 18px - 20px */
+      --font-page-title: clamp(2rem, 1.75rem + 1.2vw, 2.5rem);         /* 32px - 40px */
+      --font-kpi: clamp(2.75rem, 2.4rem + 1.5vw, 3.5rem);              /* 44px - 56px */
+      --font-table: clamp(0.875rem, 0.85rem + 0.12vw, 0.9375rem);      /* 14px - 15px */
+
+      /* Sizing & Spacing Tokens */
+      --card-padding: clamp(1.5rem, 1.35rem + 0.5vw, 1.75rem);         /* 24px - 28px */
+      --card-gap: 1.5rem;                                              /* 24px */
+      --icon-size: 1.3125rem;                                          /* 21px */
+      --avatar-size: 2.375rem;                                         /* 38px */
+      --navbar-height: 4.375rem;                                       /* 70px (68-72px) */
+      --input-height: 3.25rem;                                         /* 52px */
+      --table-row-min-height: 3.25rem;                                 /* 52px */
+
+      /* Sidebar Navigation Tokens */
+      --sidebar-width: 260px;
+      --sidebar-collapsed-width: 72px;
+      --sidebar-row-height: 46px;                                      /* 44-48px */
     }
-    .light-mode {
-      --bg: #f9fafb; --card: #ffffff; --border: rgba(0,0,0,0.1);
-      --text: #111827; --muted: #6b7280; --brand: #4f46e5;
+
+    body.dark-mode {
+      --bg: #121214;
+      --surface: #18181C;
+      --surface-subtle: #202026;
+      --border: #2A2A30;
+      --border-subtle: #222228;
+      --ink: #F0F0F3;
+      --muted: #8E8E98;
+      --label: #72727C;
+      --accent: #E04D47;
+      --accent-soft: rgba(224, 77, 71, 0.15);
+      --accent-border: rgba(224, 77, 71, 0.35);
+      --positive: #2BB356;
+      --positive-soft: rgba(43, 179, 86, 0.15);
+      --negative: #E04D47;
+      --negative-soft: rgba(224, 77, 71, 0.15);
+      --secondary: #4D8FE0;
+      --secondary-soft: rgba(77, 143, 224, 0.15);
+      --warning: #F5A623;
+      --warning-soft: rgba(245, 166, 35, 0.15);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.5);
     }
-    /* Sidebar */
-    .sidebar { width: 260px; transition: width 0.3s ease; }
-    .sidebar.collapsed { width: 72px; }
-    .sidebar.collapsed .nav-label,
-    .sidebar.collapsed .logo-text,
-    .sidebar.collapsed .user-info { display: none; }
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-    /* Status badges */
-    .badge-open { background: rgba(245,158,11,0.15); color: #f59e0b; }
-    .badge-confirmed { background: rgba(239,68,68,0.15); color: #ef4444; }
-    .badge-false-positive { background: rgba(16,185,129,0.15); color: #10b981; }
-    .badge-approved { background: rgba(16,185,129,0.15); color: #10b981; }
-    .badge-flagged { background: rgba(245,158,11,0.15); color: #f59e0b; }
-    .badge-blocked { background: rgba(239,68,68,0.15); color: #ef4444; }
-    /* Cards */
-    .glass-card {
-      background: var(--card);
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: var(--font-body);
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      overflow-x: hidden;
+    }
+
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    /* 2. COMPONENT DESIGN SYSTEM                                                */
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    .fs-card {
+      background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 1rem;
+      border-radius: 1.25rem;
+      padding: var(--card-padding);
+      box-shadow: var(--shadow-sm);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
-    /* Skeleton loader */
+
+    .fs-kpi-strip {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: var(--card-padding);
+      box-shadow: var(--shadow-sm);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .fs-eyebrow {
+      font-size: var(--font-eyebrow);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--label);
+    }
+
+    .fs-kpi-val {
+      font-size: var(--font-kpi);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--ink);
+    }
+    .fs-kpi-val .unit-suffix {
+      font-size: 45%;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      vertical-align: baseline;
+    }
+
+    /* Action Buttons (15px medium weight) */
+    .btn-primary {
+      background-color: var(--ink);
+      color: var(--bg);
+      border-radius: 9999px;
+      font-weight: 600;
+      min-height: 44px;
+      padding: 0.625rem 1.375rem;
+      font-size: var(--font-btn);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      opacity: 0.90;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-weight: 500;
+      min-height: 44px;
+      padding: 0.625rem 1.25rem;
+      font-size: var(--font-btn);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background-color: var(--surface-subtle);
+      border-color: var(--border);
+    }
+
+    .btn-accent {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      border-radius: 9999px;
+      font-weight: 600;
+      min-height: 44px;
+      padding: 0.625rem 1.375rem;
+      font-size: var(--font-btn);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .btn-accent:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    /* Top tab for admin navigation */
+    .top-tab {
+      position: relative;
+      padding: 0.875rem 1.25rem;
+      font-size: var(--font-nav);
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .top-tab:hover {
+      color: var(--ink);
+    }
+    .top-tab.active {
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .top-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 1rem;
+      right: 1rem;
+      height: 3px;
+      background-color: var(--accent);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Badges */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: var(--font-secondary);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .badge-approved, .badge-safe, .badge-fp {
+      background-color: var(--positive-soft);
+      color: var(--positive);
+      border: 1px solid rgba(30, 123, 58, 0.2);
+    }
+    .badge-flagged, .badge-open, .badge-hold {
+      background-color: var(--warning-soft);
+      color: var(--warning);
+      border: 1px solid rgba(217, 138, 0, 0.25);
+    }
+    .badge-blocked, .badge-confirmed, .badge-fraud {
+      background-color: var(--negative-soft);
+      color: var(--negative);
+      border: 1px solid rgba(192, 48, 43, 0.25);
+    }
+
+    /* Table Typography & Row Min-height */
+    table th {
+      font-size: var(--font-eyebrow);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--label);
+    }
+    table td {
+      font-size: var(--font-table);
+    }
+    table tbody tr {
+      min-height: var(--table-row-min-height);
+    }
+
+    /* Chart Container (340-400px desktop) */
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 380px;
+    }
+    @media (max-width: 1024px) {
+      .chart-box { height: 340px; }
+    }
+    @media (max-width: 640px) {
+      .chart-box { height: 280px; }
+    }
+    canvas {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    .btn-chart-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .btn-chart-action:hover {
+      background: var(--surface-subtle);
+      color: var(--ink);
+      border-color: var(--label);
+      transform: translateY(-1px);
+    }
+
+    /* Progress bar */
+    .thin-progress-track {
+      background-color: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      height: 7px;
+      overflow: hidden;
+    }
+    .thin-progress-bar {
+      background-color: var(--accent);
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.6s ease;
+    }
+
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    /* 3. USER DASHBOARD LEFT SIDEBAR (FIX 2 SPECIFICATION)                      */
+    /* ═════════════════════════════════════════════════════════════════════════ */
+    .user-sidebar {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      background-color: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .user-sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
+    }
+
+    .user-main-wrapper {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body.sidebar-is-collapsed .user-main-wrapper {
+      margin-left: var(--sidebar-collapsed-width);
+    }
+
+    /* Sidebar Navigation Links */
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      height: var(--sidebar-row-height);
+      min-height: var(--sidebar-row-height);
+      padding: 0 1rem;
+      margin: 0.25rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: var(--font-nav);
+      font-weight: 500;
+      color: var(--muted);
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      position: relative;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+    }
+
+    .sidebar-nav-item:hover {
+      background-color: var(--surface-subtle);
+      color: var(--ink);
+    }
+
+    .sidebar-nav-item.active {
+      background-color: var(--accent-soft);
+      color: var(--ink);
+      font-weight: 700;
+      border-left: 3px solid var(--accent);
+    }
+    .sidebar-nav-item.active i {
+      color: var(--accent);
+    }
+
+    .sidebar-nav-item:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Collapsed Sidebar Rail Behavior */
+    .user-sidebar.collapsed .sidebar-hide-on-collapse {
+      display: none !important;
+    }
+    .user-sidebar.collapsed .sidebar-nav-item {
+      justify-content: center;
+      padding: 0;
+      margin: 0.25rem 0.5rem;
+    }
+    .user-sidebar.collapsed .sidebar-header {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    /* Tooltip on Hover when Collapsed */
+    .user-sidebar.collapsed .sidebar-nav-item[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      z-index: 60;
+      box-shadow: var(--shadow-md);
+      pointer-events: none;
+    }
+
+    /* Mobile Off-Canvas Drawer (< 1024px) */
+    @media (max-width: 1023px) {
+      .user-sidebar {
+        transform: translateX(-100%);
+        width: 280px !important;
+      }
+      .user-sidebar.drawer-open {
+        transform: translateX(0);
+      }
+      .user-main-wrapper {
+        margin-left: 0 !important;
+      }
+    }
+
+    /* Skeleton transition container */
+    .fs-skeleton {
+      background: linear-gradient(90deg, var(--surface-subtle) 25%, var(--border-subtle) 50%, var(--surface-subtle) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 0.75rem;
+    }
     @keyframes shimmer {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
     }
-    .skeleton {
-      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 0.5rem;
-    }
-    /* Toast notifications */
+
+    /* Toast */
     #toast-container {
-      position: fixed; top: 1rem; right: 1rem; z-index: 9999;
-      display: flex; flex-direction: column; gap: 0.5rem;
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
-    .toast {
-      padding: 0.75rem 1rem; border-radius: 0.75rem; min-width: 280px;
-      display: flex; align-items: center; gap: 0.75rem;
-      animation: fadeIn 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    .fs-toast {
+      background-color: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 0.875rem;
+      padding: 0.875rem 1.25rem;
+      min-width: 320px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: var(--font-secondary);
+      animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .toast-success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
-    .toast-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
-    .toast-warn { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
-    /* Table hover */
-    tr.data-row:hover { background: rgba(255,255,255,0.03); }
-    /* Progress bars */
-    .progress-bar {
-      background: linear-gradient(90deg, #6366f1, #818cf8);
-      border-radius: 9999px; height: 8px; transition: width 0.8s ease;
+    @keyframes toastSlide {
+      0% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    /* Gauge */
-    .gauge-ring {
-      transform-origin: center;
-      transform: rotate(-90deg);
-      transition: stroke-dashoffset 1s ease;
+
+    /* Drawer / Modal Backdrops */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(23, 24, 28, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
-    /* Mobile drawer */
-    @media (max-width: 768px) {
-      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 50; transition: left 0.3s ease; }
-      .sidebar.open { left: 0; }
-      .main-content { margin-left: 0 !important; }
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(23, 24, 28, 0.4);
+      backdrop-filter: blur(2px);
+      z-index: 90;
     }
+    .drawer-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      z-index: 95;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .drawer-panel.open {
+      transform: translateX(0);
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--label); }
   </style>
 
   <th:block th:fragment="head-extra"></th:block>
 </head>
-<body class="text-gray-100 min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-<!-- Toast container -->
+<!-- Toast Notification Container -->
 <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Flash messages from server -->
 <div th:if="${success}" class="hidden" id="flash-success" th:data-msg="${success}"></div>
 <div th:if="${error}" class="hidden" id="flash-error" th:data-msg="${error}"></div>
 
-<!-- Mobile overlay -->
-<div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- CASE A: ADMIN CONSOLE TOP NAVIGATION (ROLE_ADMIN)                           -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<header th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
+        class="sticky top-0 z-40 bg-[var(--surface)] border-b border-[var(--border)] transition-colors h-[70px] flex items-center">
+  <div class="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-between gap-6">
 
-<div class="flex min-h-screen">
-  <!-- ═══════════════ SIDEBAR ═══════════════ -->
-  <aside id="sidebar" class="sidebar flex flex-col bg-[#0f0f11] border-r border-white/5 overflow-y-auto" role="navigation" aria-label="Main navigation">
-    <!-- Logo -->
-    <div class="flex items-center gap-3 px-5 py-5 border-b border-white/5">
-      <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-        <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
-      </div>
-      <span class="logo-text font-bold text-white text-lg tracking-tight">FraudShield</span>
+    <!-- Left: Logo / Brand -->
+    <div class="flex items-center gap-4 flex-shrink-0">
+      <a href="/admin/dashboard" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-bold text-lg tracking-tight text-[var(--ink)] leading-none">FraudShield</span>
+          <span class="text-[11px] font-semibold text-[var(--label)] uppercase tracking-wider mt-1">Admin Console</span>
+        </div>
+      </a>
     </div>
 
-    <!-- Nav items - Admin -->
-    <nav class="flex-1 px-3 py-4 space-y-1" sec:authorize="hasRole('ADMIN')">
-      <p class="nav-label text-[10px] uppercase font-semibold text-gray-500 px-2 mb-2 tracking-widest">Admin</p>
-      <a href="/admin/dashboard"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Dashboard">
-        <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Dashboard</span>
+    <!-- Center: Admin Navigation Tabs -->
+    <nav class="hidden md:flex items-center justify-center space-x-1 flex-1" role="navigation" aria-label="Admin navigation">
+      <a href="/admin/dashboard" class="top-tab" th:classappend="${pageTitle == 'Admin Dashboard'} ? 'active' : ''">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 opacity-75"></i>
+        <span>Dashboard</span>
       </a>
-      <a href="/admin/reports"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Reports">
-        <i data-lucide="file-bar-chart" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Reports</span>
+      <a href="/admin/reports" class="top-tab" th:classappend="${pageTitle == 'Detection Reports' or (pageTitle != null and pageTitle.contains('Case #'))} ? 'active' : ''">
+        <i data-lucide="file-bar-chart" class="w-4 h-4 opacity-75"></i>
+        <span>Reports & Cases</span>
       </a>
-      <a href="/admin/algorithms"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Algorithms">
-        <i data-lucide="cpu" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Algorithms</span>
+      <a href="/admin/algorithms" class="top-tab" th:classappend="${pageTitle == 'Algorithm Management'} ? 'active' : ''">
+        <i data-lucide="cpu" class="w-4 h-4 opacity-75"></i>
+        <span>Algorithms</span>
       </a>
-      <a href="/admin/config"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150" aria-label="Configuration">
-        <i data-lucide="settings" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Configuration</span>
+      <a href="/admin/config" class="top-tab" th:classappend="${pageTitle == 'Configuration Settings'} ? 'active' : ''">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4 opacity-75"></i>
+        <span>Configuration</span>
       </a>
     </nav>
 
-    <!-- Nav items - User -->
-    <nav class="flex-1 px-3 py-4 space-y-1" sec:authorize="hasRole('USER') and !hasRole('ADMIN')">
-      <p class="nav-label text-[10px] uppercase font-semibold text-gray-500 px-2 mb-2 tracking-widest">My Account</p>
-      <a href="/user/dashboard"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
-        <i data-lucide="home" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Dashboard</span>
-      </a>
-      <a href="/user/transactions/new"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
-        <i data-lucide="send" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">New Transaction</span>
-      </a>
-      <a href="/user/transactions"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
-        <i data-lucide="list" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Transactions</span>
-      </a>
-      <a href="/user/alerts"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-150">
-        <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="nav-label">Alerts</span>
-        <span id="sidebar-alert-badge" class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
-      </a>
-    </nav>
+    <!-- Right: Actions & User Menu -->
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <!-- Theme Toggle -->
+      <button onclick="toggleTheme()" class="p-2.5 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition" aria-label="Toggle theme">
+        <i id="theme-icon-admin" data-lucide="moon" class="w-4 h-4"></i>
+      </button>
 
-    <!-- Bottom user info -->
-    <div class="border-t border-white/5 p-4">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-9 h-9 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-          <i data-lucide="user" class="w-4 h-4 text-white"></i>
-        </div>
-        <div class="user-info min-w-0">
-          <p class="text-sm font-medium text-white truncate" th:text="${currentUser}">user@example.com</p>
-          <p class="text-xs text-gray-500" sec:authentication="principal.authorities[0].authority">Role</p>
+      <!-- Admin Profile Dropdown -->
+      <div class="relative" id="admin-user-menu-wrapper">
+        <button onclick="toggleAdminDropdown()" class="flex items-center gap-2.5 p-1.5 pl-3 pr-2.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface-subtle)] transition">
+          <div class="w-7 h-7 rounded-full bg-[var(--accent)] text-white text-xs font-bold flex items-center justify-center">A</div>
+          <span class="text-sm font-semibold text-[var(--ink)] hidden sm:inline-block max-w-[130px] truncate" th:text="${currentUser != null ? currentUser : 'admin@fraud.com'}">admin@fraud.com</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-[var(--muted)]"></i>
+        </button>
+
+        <div id="admin-user-dropdown" class="hidden absolute right-0 mt-2 w-56 fs-card shadow-lg p-2 z-50">
+          <div class="px-3 py-2 border-b border-[var(--border)] mb-1">
+            <p class="text-xs font-semibold text-[var(--ink)] truncate" th:text="${currentUser != null ? currentUser : 'admin@fraud.com'}">admin@fraud.com</p>
+            <p class="text-[10px] text-[var(--label)] uppercase font-mono mt-0.5">ROLE_ADMIN</p>
+          </div>
+          <a href="/admin/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink)] hover:bg-[var(--surface-subtle)] transition">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-[var(--muted)]"></i>
+            <span>Admin Console</span>
+          </a>
+          <a href="/dashboard/overview" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink)] hover:bg-[var(--surface-subtle)] transition">
+            <i data-lucide="user" class="w-4 h-4 text-[var(--muted)]"></i>
+            <span>Switch to User View</span>
+          </a>
+          <div class="border-t border-[var(--border)] my-1"></div>
+          <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--negative)] hover:bg-[var(--negative-soft)] transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span>Sign Out</span>
+          </a>
         </div>
       </div>
-      <a href="/logout" class="user-info flex items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-500/10 w-full" aria-label="Logout">
-        <i data-lucide="log-out" class="w-4 h-4"></i>
-        <span>Logout</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- CASE B: USER DASHBOARD WITH LEFT VERTICAL SIDEBAR (ROLE_USER)               -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<th:block th:if="${!#authorization.expression('hasRole(''ADMIN'')')}">
+
+  <!-- Mobile Backdrop Overlay for Off-Canvas Drawer -->
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden lg:hidden" onclick="closeSidebarDrawer()" aria-hidden="true"></div>
+
+  <!-- Left Vertical Sidebar (260px Fixed Desktop, Collapsible Rail 72px, Mobile Drawer) -->
+  <aside id="user-sidebar" class="user-sidebar" role="navigation" aria-label="User navigation">
+
+    <!-- Top: Logo & Wordmark + Collapse Toggle -->
+    <div>
+      <div class="sidebar-header flex items-center justify-between px-5 py-5 border-b border-[var(--border)] min-h-[70px]">
+        <a href="/dashboard/overview" onclick="switchPage('overview', true); return false;" class="sidebar-brand flex items-center gap-3 group">
+          <div class="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 flex-shrink-0">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <div class="sidebar-brand-text flex flex-col sidebar-hide-on-collapse">
+            <span class="font-bold text-lg tracking-tight text-[var(--ink)] leading-none">FraudShield</span>
+            <span class="text-[11px] font-semibold text-[var(--label)] uppercase tracking-wider mt-1">AI Security</span>
+          </div>
+        </a>
+
+        <!-- Desktop Collapse Button -->
+        <button id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()"
+                class="hidden lg:flex p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition"
+                title="Toggle sidebar size" aria-label="Collapse sidebar">
+          <i id="collapse-icon" data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Mobile Drawer Close Button -->
+        <button onclick="closeSidebarDrawer()" class="lg:hidden p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Close menu">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Menu Items (Order: Overview, Transactions, Alerts, Security, Settings) -->
+      <nav class="py-4 space-y-1" role="menu">
+        <!-- 1. Overview -->
+        <a href="/dashboard/overview" id="nav-item-overview"
+           onclick="switchPage('overview', true); return false;"
+           data-tooltip="Overview"
+           th:classappend="${activeTab == 'overview' or activeTab == null} ? 'active' : ''"
+           th:attr="aria-current=${activeTab == 'overview' or activeTab == null ? 'page' : 'false'}"
+           class="sidebar-nav-item" role="menuitem">
+          <i data-lucide="layout-grid" class="w-5 h-5 flex-shrink-0"></i>
+          <span class="sidebar-label sidebar-hide-on-collapse">Overview</span>
+        </a>
+
+        <!-- 2. Transactions -->
+        <a href="/dashboard/transactions" id="nav-item-transactions"
+           onclick="switchPage('transactions', true); return false;"
+           data-tooltip="Transactions"
+           th:classappend="${activeTab == 'transactions'} ? 'active' : ''"
+           th:attr="aria-current=${activeTab == 'transactions' ? 'page' : 'false'}"
+           class="sidebar-nav-item" role="menuitem">
+          <i data-lucide="receipt" class="w-5 h-5 flex-shrink-0"></i>
+          <span class="sidebar-label sidebar-hide-on-collapse">Transactions</span>
+        </a>
+
+        <!-- 3. Alerts (with small red count badge) -->
+        <a href="/dashboard/alerts" id="nav-item-alerts"
+           onclick="switchPage('alerts', true); return false;"
+           data-tooltip="Alerts"
+           th:classappend="${activeTab == 'alerts'} ? 'active' : ''"
+           th:attr="aria-current=${activeTab == 'alerts' ? 'page' : 'false'}"
+           class="sidebar-nav-item flex items-center justify-between" role="menuitem">
+          <div class="flex items-center gap-3.5">
+            <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
+            <span class="sidebar-label sidebar-hide-on-collapse">Alerts</span>
+          </div>
+          <span id="sidebar-alert-badge"
+                th:classappend="${openAlertsCount != null and openAlertsCount > 0 ? '' : 'hidden'}"
+                th:text="${openAlertsCount != null ? openAlertsCount : '0'}"
+                class="sidebar-badge sidebar-hide-on-collapse bg-[var(--accent)] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">0</span>
+        </a>
+
+        <!-- 4. Security -->
+        <a href="/dashboard/security" id="nav-item-security"
+           onclick="switchPage('security', true); return false;"
+           data-tooltip="Security"
+           th:classappend="${activeTab == 'security'} ? 'active' : ''"
+           th:attr="aria-current=${activeTab == 'security' ? 'page' : 'false'}"
+           class="sidebar-nav-item" role="menuitem">
+          <i data-lucide="shield" class="w-5 h-5 flex-shrink-0"></i>
+          <span class="sidebar-label sidebar-hide-on-collapse">Security</span>
+        </a>
+
+        <!-- 5. Settings -->
+        <a href="/dashboard/settings" id="nav-item-settings"
+           onclick="switchPage('settings', true); return false;"
+           data-tooltip="Settings"
+           th:classappend="${activeTab == 'settings'} ? 'active' : ''"
+           th:attr="aria-current=${activeTab == 'settings' ? 'page' : 'false'}"
+           class="sidebar-nav-item" role="menuitem">
+          <i data-lucide="sliders" class="w-5 h-5 flex-shrink-0"></i>
+          <span class="sidebar-label sidebar-hide-on-collapse">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom: User Profile Card & Sign Out Button -->
+    <div class="p-3 border-t border-[var(--border)]">
+      <div class="p-2.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center gap-3 mb-2">
+        <div class="w-9 h-9 rounded-full bg-[var(--ink)] text-[var(--bg)] font-bold text-sm flex items-center justify-center flex-shrink-0 shadow-sm">
+          <span th:text="${currentUser != null ? currentUser.substring(0,1).toUpperCase() : 'U'}">U</span>
+        </div>
+        <div class="sidebar-user-text min-w-0 flex-1 sidebar-hide-on-collapse">
+          <p class="font-bold text-sm text-[var(--ink)] truncate" th:text="${userName != null ? userName : 'Demo User'}">Demo User</p>
+          <p class="text-xs text-[var(--muted)] truncate" th:text="${currentUser != null ? currentUser : 'demo@fraudshield.io'}">demo@fraudshield.io</p>
+        </div>
+      </div>
+
+      <a href="/logout"
+         data-tooltip="Sign out"
+         class="sidebar-nav-item !text-[var(--negative)] hover:!bg-[var(--negative-soft)] !border-l-0 justify-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="sidebar-label sidebar-hide-on-collapse text-xs font-semibold">Sign Out</span>
       </a>
     </div>
+
   </aside>
 
-  <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
-  <div class="main-content flex-1 flex flex-col min-w-0" style="margin-left: 0;">
+</th:block>
 
-    <!-- Top bar -->
-    <header class="sticky top-0 z-30 flex items-center gap-4 px-6 py-4 border-b border-white/5 bg-[#0a0a0b]/90 backdrop-blur-sm">
-      <!-- Hamburger (mobile) -->
-      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1" aria-label="Toggle sidebar">
-        <i data-lucide="menu" class="w-5 h-5"></i>
-      </button>
-      <!-- Collapse button (desktop) -->
-      <button onclick="collapseSidebar()" class="hidden md:flex text-gray-400 hover:text-white p-1" aria-label="Collapse sidebar">
-        <i data-lucide="panel-left" class="w-5 h-5"></i>
-      </button>
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- CONTENT WRAPPER                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div th:class="${#authorization.expression('hasRole(''ADMIN'')')} ? 'flex-1 flex flex-col w-full' : 'user-main-wrapper flex-1 flex flex-col'">
 
-      <div class="flex-1 min-w-0">
-        <h1 class="text-lg font-semibold text-white truncate" th:text="${pageTitle}">Page Title</h1>
-        <p class="text-xs text-gray-500 truncate" th:text="${pageSubtitle}">Subtitle</p>
-      </div>
+  <!-- Slim Top Bar for User Dashboard (Fix 2 Spec: hamburger, page title/subtitle, theme, bell, avatar) -->
+  <header th:if="${!#authorization.expression('hasRole(''ADMIN'')')}"
+          class="sticky top-0 z-30 bg-[var(--surface)] border-b border-[var(--border)] h-[70px] flex items-center transition-colors">
+    <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 flex items-center justify-between gap-4">
 
-      <div class="flex items-center gap-3 flex-shrink-0">
-        <!-- Contact support -->
-        <button class="hidden sm:flex items-center gap-2 text-sm text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:border-indigo-500/50 hover:text-indigo-400 transition-all">
-          <i data-lucide="headphones" class="w-4 h-4"></i>
-          <span>Support</span>
+      <!-- Left: Mobile Hamburger & Dynamic Page Title with Subtitle -->
+      <div class="flex items-center gap-3.5 min-w-0">
+        <!-- Hamburger Button (Mobile & Tablet < 1024px) -->
+        <button onclick="openSidebarDrawer()" class="lg:hidden p-2 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Open navigation drawer">
+          <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
 
-        <!-- Notification bell -->
-        <button id="bell-btn" onclick="window.location='/user/alerts'" class="relative text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition" aria-label="Alerts">
-          <i data-lucide="bell" class="w-5 h-5"></i>
-          <span id="bell-badge" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
-        </button>
-
-        <!-- Theme toggle -->
-        <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-400 hover:text-yellow-400 p-2 rounded-lg hover:bg-white/5 transition" aria-label="Toggle theme">
-          <i data-lucide="sun" class="w-5 h-5"></i>
-        </button>
-
-        <!-- Avatar -->
-        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer" aria-label="User menu">
-          <i data-lucide="user" class="w-4 h-4 text-white"></i>
+        <div class="min-w-0">
+          <h1 id="topbar-page-title" class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)] truncate leading-tight"
+              th:text="${pageTitle != null ? pageTitle : 'Overview'}">Overview</h1>
+          <p id="topbar-page-subtitle" class="text-xs text-[var(--muted)] truncate hidden sm:block"
+             th:text="${pageSubtitle != null ? pageSubtitle : 'Live spending safety & account protection'}">Live spending safety & account protection</p>
         </div>
       </div>
-    </header>
 
-    <!-- Page content slot -->
-    <main class="flex-1 p-6 overflow-x-hidden" id="page-content">
-      <th:block th:insert="${content}"></th:block>
-    </main>
+      <!-- Right: Quick Tx Action, Bell, Theme, Profile -->
+      <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
+
+        <!-- New Transaction Simulation Button -->
+        <button onclick="openNewTxModal()" class="btn-primary py-2 px-3.5 text-xs sm:text-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">New Transaction</span>
+          <span class="sm:hidden">New TX</span>
+        </button>
+
+        <!-- Notification Bell with Popover -->
+        <div class="relative">
+          <button id="nav-bell-btn" onclick="toggleAlertPopover()"
+                  class="p-2.5 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition"
+                  aria-label="Alerts">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+            <span id="nav-bell-badge"
+                  class="absolute -top-1 -right-1 bg-[var(--accent)] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+
+          <!-- Alert Popover -->
+          <div id="alert-popover" class="hidden absolute right-0 mt-2 w-80 sm:w-96 fs-card shadow-lg p-4 z-50">
+            <div class="flex items-center justify-between pb-2 border-b border-[var(--border)] mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-[var(--label)]">Recent Alerts</span>
+              <a href="/dashboard/alerts" onclick="switchPage('alerts', true); toggleAlertPopover(); return false;" class="text-xs text-[var(--accent)] hover:underline font-semibold">View All</a>
+            </div>
+            <div id="popover-alerts-list" class="space-y-2 text-xs">
+              <p class="text-[var(--muted)] text-center py-3">Checking live alert stream…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle" onclick="toggleTheme()"
+                class="p-2.5 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition"
+                aria-label="Toggle theme">
+          <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Profile Menu Dropdown -->
+        <div class="relative" id="user-menu-wrapper">
+          <button onclick="toggleUserDropdown()" class="flex items-center gap-2 p-1.5 pl-2.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface-subtle)] transition">
+            <div class="w-7 h-7 rounded-full bg-[var(--ink)] text-[var(--bg)] text-xs font-bold flex items-center justify-center">
+              <span th:text="${currentUser != null ? currentUser.substring(0,1).toUpperCase() : 'U'}">U</span>
+            </div>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-[var(--muted)] hidden sm:block"></i>
+          </button>
+
+          <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 fs-card shadow-lg p-2 z-50">
+            <div class="px-3 py-2 border-b border-[var(--border)] mb-1">
+              <p class="text-xs font-semibold text-[var(--ink)] truncate" th:text="${currentUser}">user@example.com</p>
+              <p class="text-[10px] text-[var(--label)] uppercase font-mono mt-0.5">Protected Account</p>
+            </div>
+            <a href="/dashboard/security" onclick="switchPage('security', true); toggleUserDropdown(); return false;"
+               class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink)] hover:bg-[var(--surface-subtle)] transition">
+              <i data-lucide="shield" class="w-3.5 h-3.5 text-[var(--muted)]"></i>
+              <span>Security & 2FA</span>
+            </a>
+            <a href="/dashboard/settings" onclick="switchPage('settings', true); toggleUserDropdown(); return false;"
+               class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink)] hover:bg-[var(--surface-subtle)] transition">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-[var(--muted)]"></i>
+              <span>Account Settings</span>
+            </a>
+            <div class="border-t border-[var(--border)] my-1"></div>
+            <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--negative)] hover:bg-[var(--negative-soft)] transition">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+              <span>Sign Out</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Skeleton Loader shown during tab switches -->
+  <div id="tab-skeleton" class="hidden px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 sm:py-8 space-y-6">
+    <div class="h-28 fs-card fs-skeleton"></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="h-32 fs-kpi-strip fs-skeleton"></div>
+      <div class="h-32 fs-kpi-strip fs-skeleton"></div>
+      <div class="h-32 fs-kpi-strip fs-skeleton"></div>
+      <div class="h-32 fs-kpi-strip fs-skeleton"></div>
+    </div>
+    <div class="h-80 fs-card fs-skeleton"></div>
+  </div>
+
+  <!-- Main Page Content Body -->
+  <main class="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 sm:py-8" id="page-content">
+    <th:block th:insert="${content}"></th:block>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-[var(--border)] py-6 bg-[var(--surface)] text-xs text-[var(--muted)] transition-colors mt-auto">
+    <div class="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 rounded bg-[var(--accent)] flex items-center justify-center text-white">
+          <i data-lucide="shield" class="w-2.5 h-2.5"></i>
+        </div>
+        <span class="font-semibold text-[var(--ink)]">FraudShield</span>
+        <span>— AI Security & Real-Time Protection Platform</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="inline-flex items-center gap-1.5 text-[var(--positive)]">
+          <span class="w-2 h-2 rounded-full bg-[var(--positive)] animate-pulse"></span>
+          <span>Detection Engine Active (v1.1)</span>
+        </span>
+        <span>·</span>
+        <span>Dual Layer H2 / JDBC</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODALS & DRAWERS                                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- 1. Slide-over Transaction Detail Drawer -->
+<div id="tx-drawer-backdrop" class="drawer-backdrop hidden" onclick="closeTxDrawer()"></div>
+<div id="tx-drawer" class="drawer-panel p-6 sm:p-7">
+  <div class="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-6">
+    <div>
+      <span class="fs-eyebrow">Transaction Analysis</span>
+      <h3 class="text-xl font-bold text-[var(--ink)] mt-0.5" id="drawer-tx-title">Transaction #—</h3>
+    </div>
+    <button onclick="closeTxDrawer()" class="p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-full hover:bg-[var(--surface-subtle)]" aria-label="Close drawer">
+      <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+  </div>
+
+  <div class="space-y-6 text-sm">
+    <!-- Status Banner -->
+    <div id="drawer-status-box" class="p-4 rounded-xl border flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="drawer-status-icon" class="w-9 h-9 rounded-full flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-[var(--ink)]" id="drawer-status-title">Approved</p>
+          <p class="text-xs text-[var(--muted)]" id="drawer-status-desc">Passed all anomaly tests</p>
+        </div>
+      </div>
+      <span id="drawer-status-badge" class="badge-pill">APPROVED</span>
+    </div>
+
+    <!-- AI Risk Score Gauge -->
+    <div class="p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]">
+      <div class="flex items-center justify-between mb-2">
+        <span class="fs-eyebrow">AI Risk Assessment</span>
+        <span id="drawer-risk-val" class="font-mono font-bold text-sm text-[var(--ink)]">0%</span>
+      </div>
+      <div class="thin-progress-track mb-2">
+        <div id="drawer-risk-bar" class="thin-progress-bar" style="width: 0%;"></div>
+      </div>
+      <p id="drawer-risk-rationale" class="text-xs text-[var(--muted)]">Normal pattern consistency.</p>
+    </div>
+
+    <!-- Key Details Table -->
+    <div class="space-y-3 border-t border-[var(--border)] pt-4">
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Merchant</span>
+        <span id="drawer-merchant" class="font-semibold text-[var(--ink)]">—</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Amount</span>
+        <span id="drawer-amount" class="font-bold font-mono text-[var(--ink)]">₹0.00</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Date & Time</span>
+        <span id="drawer-date" class="text-[var(--ink)]">—</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Location</span>
+        <span id="drawer-location" class="text-[var(--ink)] flex items-center gap-1">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[var(--muted)]"></i>
+          <span id="drawer-location-txt">—</span>
+        </span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Payment Method</span>
+        <span id="drawer-method" class="font-mono text-[var(--ink)]">—</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-[var(--border-subtle)]">
+        <span class="text-[var(--muted)]">Device Identifier</span>
+        <span id="drawer-device" class="font-mono text-xs text-[var(--muted)] truncate max-w-[200px]">—</span>
+      </div>
+    </div>
+
+    <!-- Actions for Flagged/Held items -->
+    <div id="drawer-actions-box" class="pt-4 border-t border-[var(--border)] space-y-2">
+      <p class="fs-eyebrow mb-2">Cardholder Verification</p>
+      <div class="flex gap-2">
+        <form method="post" action="/dashboard/transactions/confirm" class="flex-1" id="drawer-confirm-form">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="transactionId" id="drawer-confirm-tx-id"/>
+          <input type="hidden" name="returnTab" value="transactions"/>
+          <button type="submit" class="w-full btn-secondary text-xs justify-center py-2.5 hover:border-[var(--positive)] hover:text-[var(--positive)]">
+            <i data-lucide="check" class="w-4 h-4 text-[var(--positive)]"></i>
+            <span>This was me</span>
+          </button>
+        </form>
+        <form method="post" action="/dashboard/transactions/report" class="flex-1" id="drawer-report-form">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="transactionId" id="drawer-report-tx-id"/>
+          <input type="hidden" name="returnTab" value="transactions"/>
+          <button type="submit" class="w-full btn-secondary text-xs justify-center py-2.5 hover:border-[var(--accent)] hover:text-[var(--accent)]">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-[var(--accent)]"></i>
+            <span>This wasn't me</span>
+          </button>
+        </form>
+      </div>
+      <p class="text-[12px] text-[var(--muted)] text-center pt-1">Reporting fraud instantly locks the card and flags the item for admin investigation.</p>
+    </div>
   </div>
 </div>
 
+<!-- 2. New Transaction Simulation Modal -->
+<div id="new-tx-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeNewTxModal()">
+  <div class="fs-card max-w-lg w-full p-7 sm:p-8 relative shadow-lg">
+    <div class="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-5">
+      <div>
+        <span class="fs-eyebrow">Simulate & Score</span>
+        <h3 class="text-xl font-bold text-[var(--ink)]">Submit New Transaction</h3>
+      </div>
+      <button onclick="closeNewTxModal()" class="p-1.5 text-[var(--muted)] hover:text-[var(--ink)] rounded-full hover:bg-[var(--surface-subtle)]" aria-label="Close modal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form method="post" action="/user/transactions/new" id="modal-tx-form" class="space-y-4">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <div>
+        <label for="modal-amount" class="block text-[13px] font-semibold text-[var(--ink)] mb-1.5">Amount (INR) *</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted)]">₹</span>
+          <input type="number" id="modal-amount" name="amount" step="0.01" min="0.01" required placeholder="0.00"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-3 pl-8 pr-4 text-base font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                 oninput="updateModalRiskHint()"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="modal-merchant" class="block text-[13px] font-semibold text-[var(--ink)] mb-1.5">Merchant *</label>
+          <input type="text" id="modal-merchant" name="merchant" required placeholder="e.g. Amazon, Zara, Uber"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+        <div>
+          <label for="modal-paymentMethod" class="block text-[13px] font-semibold text-[var(--ink)] mb-1.5">Payment Method</label>
+          <select id="modal-paymentMethod" name="paymentMethod"
+                  class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]">
+            <option value="ONLINE">Online Gateway</option>
+            <option value="UPI">UPI Instant</option>
+            <option value="CARD">Credit / Debit Card</option>
+            <option value="NEFT">NEFT / Wire</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="modal-location" class="block text-[13px] font-semibold text-[var(--ink)] mb-1.5">Location *</label>
+          <input type="text" id="modal-location" name="location" required placeholder="e.g. Mumbai, Bengaluru"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+        <div>
+          <label for="modal-deviceId" class="block text-[13px] font-semibold text-[var(--ink)] mb-1.5">Device ID *</label>
+          <input type="text" id="modal-deviceId" name="deviceId" required placeholder="e.g. dev-macbook-pro"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-xs font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+      </div>
+
+      <!-- Real-time amount preview hint -->
+      <div class="p-3.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] text-xs text-[var(--muted)] flex items-center justify-between">
+        <span id="modal-risk-hint">Enter an amount to preview scoring</span>
+        <span id="modal-risk-badge" class="font-mono font-bold text-[var(--ink)]">—</span>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeNewTxModal()" class="btn-secondary flex-1 justify-center">Cancel</button>
+        <button type="submit" class="btn-primary flex-1 justify-center">Analyse & Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. AI Helper Modal ("Ask about your numbers") -->
+<div id="ai-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeAiModal()">
+  <div class="fs-card max-w-lg w-full p-6 sm:p-8 relative shadow-lg">
+    <div class="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-[var(--ink)]">FraudShield AI Assistant</h3>
+          <p class="text-xs text-[var(--muted)]">Ask anything about your fraud risk and metrics</p>
+        </div>
+      </div>
+      <button onclick="closeAiModal()" class="p-1.5 text-[var(--muted)] hover:text-[var(--ink)] rounded-full hover:bg-[var(--surface-subtle)]" aria-label="Close AI helper">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Conversation Container -->
+    <div id="ai-chat-box" class="h-64 overflow-y-auto space-y-3 p-3.5 bg-[var(--surface-subtle)] rounded-xl border border-[var(--border)] mb-4 text-xs">
+      <div class="flex gap-2.5">
+        <div class="w-7 h-7 rounded-full bg-[var(--accent)] text-white flex items-center justify-center flex-shrink-0">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div class="bg-[var(--surface)] p-3.5 rounded-xl border border-[var(--border)] max-w-[85%]">
+          <p class="text-[var(--ink)] leading-relaxed">Hello! I'm your FraudShield security assistant. Ask me about your flagged transactions, spending safety score, or how our detection models work.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Prompts -->
+    <div class="flex flex-wrap gap-2 mb-3.5">
+      <button onclick="askAiPreset('Why was my transaction flagged?')" class="text-xs px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-[var(--muted)]">Why was my tx flagged?</button>
+      <button onclick="askAiPreset('How is my safety score calculated?')" class="text-xs px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-[var(--muted)]">How is my score calculated?</button>
+      <button onclick="askAiPreset('What is my total spending this month?')" class="text-xs px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-[var(--muted)]">Total spending summary</button>
+    </div>
+
+    <!-- Input Form -->
+    <form onsubmit="handleAiSubmit(event)" class="flex gap-2">
+      <input type="text" id="ai-input" placeholder="Ask a question about your account..."
+             class="flex-1 bg-[var(--surface-subtle)] border border-[var(--border)] rounded-full px-4 py-2.5 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+      <button type="submit" class="btn-primary py-2 px-4 text-xs">
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT: Client-Side Routing, Sidebar Controls, Theme, Live Alerts       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <script>
-  // ── Lucide Icons init ──
-  lucide.createIcons();
+  // 1. Tab Title & Subtitle Mapping
+  const TAB_METADATA = {
+    overview: {
+      title: 'Overview',
+      subtitle: 'Live spending safety & account protection',
+      docTitle: 'Overview — FraudShield'
+    },
+    transactions: {
+      title: 'Transactions',
+      subtitle: 'Audit ledger, status tracking & risk inspection',
+      docTitle: 'Transactions — FraudShield'
+    },
+    alerts: {
+      title: 'Alerts & Holds',
+      subtitle: 'Real-time security notifications & dispute actions',
+      docTitle: 'Alerts & Holds — FraudShield'
+    },
+    security: {
+      title: 'Security & Protection',
+      subtitle: 'Authentication devices, 2FA & risk controls',
+      docTitle: 'Security — FraudShield'
+    },
+    settings: {
+      title: 'Account Settings',
+      subtitle: 'Profile preferences & audit data export',
+      docTitle: 'Settings — FraudShield'
+    }
+  };
 
-  // ── Sidebar collapse (desktop) ──
-  function collapseSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
+  // 2. Client-Side Page Router (Switches without reload, maintains URLs)
+  window.switchPage = function(tabName, pushState = true) {
+    const tabKey = (tabName || 'overview').toLowerCase();
+    const validTabs = ['overview', 'transactions', 'alerts', 'security', 'settings'];
+    if (!validTabs.includes(tabKey)) return;
+
+    // Close mobile drawer if open
+    closeSidebarDrawer();
+
+    // Show skeleton transition
+    const skeleton = document.getElementById('tab-skeleton');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    if (skeleton) skeleton.classList.remove('hidden');
+    panels.forEach(p => p.classList.add('hidden'));
+
+    // Update active state on sidebar navigation items
+    validTabs.forEach(t => {
+      const navItem = document.getElementById('nav-item-' + t);
+      if (navItem) {
+        if (t === tabKey) {
+          navItem.classList.add('active');
+          navItem.setAttribute('aria-current', 'page');
+        } else {
+          navItem.classList.remove('active');
+          navItem.setAttribute('aria-current', 'false');
+        }
+      }
+    });
+
+    // Update slim topbar title & document title
+    const meta = TAB_METADATA[tabKey] || TAB_METADATA.overview;
+    const titleEl = document.getElementById('topbar-page-title');
+    const subtitleEl = document.getElementById('topbar-page-subtitle');
+    if (titleEl) titleEl.textContent = meta.title;
+    if (subtitleEl) subtitleEl.textContent = meta.subtitle;
+    document.title = meta.docTitle;
+
+    // Update browser URL via history.pushState if user clicked
+    if (pushState) {
+      window.history.pushState({ tab: tabKey }, meta.docTitle, '/dashboard/' + tabKey);
+    }
+
+    // Short skeleton delay to provide snappy UI feedback
+    setTimeout(() => {
+      if (skeleton) skeleton.classList.add('hidden');
+      const targetPanel = document.getElementById('tab-panel-' + tabKey);
+      if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+      }
+
+      // If switching to overview, render chart
+      if (tabKey === 'overview' && typeof window.renderUserChart === 'function') {
+        window.renderUserChart();
+      }
+
+      lucide.createIcons();
+    }, 150);
+  };
+
+  // Back / Forward Browser Navigation Support
+  window.addEventListener('popstate', (e) => {
+    let tab = 'overview';
+    const path = window.location.pathname;
+    if (path.startsWith('/dashboard/')) {
+      tab = path.replace('/dashboard/', '');
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab')) tab = params.get('tab');
+    }
+    window.switchPage(tab, false);
+  });
+
+  // 3. Left Sidebar Collapse & Expansion (Desktop Rail 72px)
+  window.toggleSidebarCollapse = function() {
+    const sidebar = document.getElementById('user-sidebar');
+    if (!sidebar) return;
+    const isNowCollapsed = sidebar.classList.toggle('collapsed');
+    document.body.classList.toggle('sidebar-is-collapsed', isNowCollapsed);
+
+    const icon = document.getElementById('collapse-icon');
+    if (icon) {
+      icon.setAttribute('data-lucide', isNowCollapsed ? 'panel-left-open' : 'panel-left-close');
+      lucide.createIcons();
+    }
+
+    try {
+      localStorage.setItem('fs_sidebar_collapsed', isNowCollapsed ? 'true' : 'false');
+    } catch (e) {}
+
+    // Trigger chart resize if on overview
+    if (window.userChartInstance) {
+      setTimeout(() => window.userChartInstance.resize(), 280);
+    }
+  };
+
+  // 4. Mobile Off-Canvas Drawer Controls (<1024px)
+  window.openSidebarDrawer = function() {
+    const sidebar = document.getElementById('user-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.add('drawer-open');
+    if (backdrop) backdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Focus trap inside drawer
+    trapSidebarFocus(sidebar);
+  };
+
+  window.closeSidebarDrawer = function() {
+    const sidebar = document.getElementById('user-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('drawer-open');
+    if (backdrop) backdrop.classList.add('hidden');
+    document.body.style.overflow = '';
+  };
+
+  // Keyboard accessibility for drawer: close on Escape & trap focus
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeSidebarDrawer();
+      closeTxDrawer();
+      closeNewTxModal();
+      closeAiModal();
+    }
+  });
+
+  function trapSidebarFocus(element) {
+    if (!element) return;
+    const focusable = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first.focus();
+
+    element.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    });
   }
 
-  // ── Mobile sidebar toggle ──
-  function toggleSidebar() {
-    const sb = document.getElementById('sidebar');
-    const ov = document.getElementById('mobile-overlay');
-    sb.classList.toggle('open');
-    ov.classList.toggle('hidden');
-  }
+  // 5. Restore Collapsed Sidebar State from localStorage
+  try {
+    if (localStorage.getItem('fs_sidebar_collapsed') === 'true') {
+      const sidebar = document.getElementById('user-sidebar');
+      if (sidebar && window.innerWidth >= 1024) {
+        sidebar.classList.add('collapsed');
+        document.body.classList.add('sidebar-is-collapsed');
+        const icon = document.getElementById('collapse-icon');
+        if (icon) icon.setAttribute('data-lucide', 'panel-left-open');
+      }
+    }
+  } catch (e) {}
 
-  // ── Toast notifications ──
+  // 6. High-Resolution Chart PNG Exporter (2x Retina DPI)
+  window.downloadChartAsPng = function(canvasId, filename) {
+    try {
+      const canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
+      if (!canvas) return;
+      const chart = window.Chart ? Chart.getChart(canvas) : null;
+      let dataUrl = chart ? chart.toBase64Image('image/png', 1.0) : canvas.toDataURL('image/png', 1.0);
+      const a = document.createElement('a');
+      a.download = (filename || 'chart-export') + '.png';
+      a.href = dataUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('High-resolution chart downloaded', 'success');
+    } catch (err) {
+      console.warn('Error exporting chart:', err);
+    }
+  };
+
+  // 7. Toast Notifications
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
-    const icons = { success: 'check-circle', error: 'x-circle', warn: 'alert-triangle' };
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}" style="width:18px;height:18px;flex-shrink:0"></i><span>${message}</span>`;
+    const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-octagon' : 'info');
+    const iconColor = type === 'success' ? 'var(--positive)' : (type === 'error' ? 'var(--accent)' : 'var(--secondary)');
+    toast.className = 'fs-toast';
+    toast.innerHTML = `<i data-lucide="${iconName}" style="width:18px;height:18px;color:${iconColor};flex-shrink:0;"></i><span>${message}</span>`;
     container.appendChild(toast);
     lucide.createIcons();
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.4s';
-      setTimeout(() => toast.remove(), 400);
-    }, 4000);
+      toast.style.transform = 'translateY(-10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4500);
   }
 
-  // ── Flash messages & Active nav ──
-  document.addEventListener('DOMContentLoaded', () => {
-    const successEl = document.getElementById('flash-success');
-    const errorEl = document.getElementById('flash-error');
-    if (successEl) showToast(successEl.dataset.msg, 'success');
-    if (errorEl) showToast(errorEl.dataset.msg, 'error');
-
-    // Highlight active nav item
-    const path = window.location.pathname;
-    document.querySelectorAll('.nav-link').forEach(link => {
-      const href = link.getAttribute('href');
-      if (href && (path === href || (href !== '/user/dashboard' && href !== '/admin/dashboard' && path.startsWith(href)))) {
-        link.classList.add('bg-indigo-600/20', 'text-indigo-400', 'border-l-2', 'border-indigo-500');
-        link.classList.remove('text-gray-400');
+  // 8. Theme Toggle (Sun / Moon)
+  function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    try {
+      localStorage.setItem('fs_theme', isDark ? 'dark' : 'light');
+    } catch (e) {}
+    updateThemeIcon(isDark);
+  }
+  function updateThemeIcon(isDark) {
+    ['theme-icon', 'theme-icon-admin'].forEach(id => {
+      const icon = document.getElementById(id);
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
       }
     });
-  });
-
-  // ── Dark/Light theme toggle ──
-  function toggleTheme() {
-    const body = document.body;
-    const isDark = !body.classList.contains('light-mode');
-    body.classList.toggle('light-mode', isDark);
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
     lucide.createIcons();
   }
-  // Restore saved theme
-  if (localStorage.getItem('theme') === 'light') {
-    document.body.classList.add('light-mode');
+  try {
+    if (localStorage.getItem('fs_theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      updateThemeIcon(true);
+    } else {
+      updateThemeIcon(false);
+    }
+  } catch (e) {}
+
+  // 9. Dropdown Controls
+  function toggleUserDropdown() {
+    document.getElementById('user-dropdown')?.classList.toggle('hidden');
+  }
+  function toggleAdminDropdown() {
+    document.getElementById('admin-user-dropdown')?.classList.toggle('hidden');
+  }
+  function toggleAlertPopover() {
+    document.getElementById('alert-popover')?.classList.toggle('hidden');
   }
 
-  // ── Alert polling (user pages) ──
+  window.addEventListener('click', (e) => {
+    const userWrap = document.getElementById('user-menu-wrapper');
+    if (userWrap && !userWrap.contains(e.target)) {
+      document.getElementById('user-dropdown')?.classList.add('hidden');
+    }
+    const adminWrap = document.getElementById('admin-user-menu-wrapper');
+    if (adminWrap && !adminWrap.contains(e.target)) {
+      document.getElementById('admin-user-dropdown')?.classList.add('hidden');
+    }
+    const bellBtn = document.getElementById('nav-bell-btn');
+    const alertPop = document.getElementById('alert-popover');
+    if (bellBtn && alertPop && !bellBtn.contains(e.target) && !alertPop.contains(e.target)) {
+      alertPop.classList.add('hidden');
+    }
+  });
+
+  // 10. Drawer for Transaction Details
+  function openTxDrawer(txData) {
+    const drawer = document.getElementById('tx-drawer');
+    const backdrop = document.getElementById('tx-drawer-backdrop');
+    if (!drawer || !txData) return;
+
+    document.getElementById('drawer-tx-title').textContent = 'Transaction #' + txData.id;
+    document.getElementById('drawer-merchant').textContent = txData.merchant || '—';
+    document.getElementById('drawer-amount').textContent = '₹' + Number(txData.amount).toLocaleString('en-IN', {minimumFractionDigits: 2});
+    document.getElementById('drawer-date').textContent = txData.date || '—';
+    document.getElementById('drawer-location-txt').textContent = txData.location || '—';
+    document.getElementById('drawer-method').textContent = txData.method || 'ONLINE';
+    document.getElementById('drawer-device').textContent = txData.deviceId || '—';
+
+    const score = Number(txData.fraudScore || 0);
+    const pct = Math.round(score * 100);
+    document.getElementById('drawer-risk-val').textContent = pct + '%';
+    const bar = document.getElementById('drawer-risk-bar');
+    bar.style.width = pct + '%';
+
+    const badge = document.getElementById('drawer-status-badge');
+    const statusTitle = document.getElementById('drawer-status-title');
+    const statusDesc = document.getElementById('drawer-status-desc');
+    const rationale = document.getElementById('drawer-risk-rationale');
+    const actionsBox = document.getElementById('drawer-actions-box');
+
+    badge.className = 'badge-pill';
+    if (txData.status === 'APPROVED') {
+      badge.classList.add('badge-approved');
+      badge.textContent = 'APPROVED';
+      statusTitle.textContent = 'Approved Transaction';
+      statusDesc.textContent = 'Passed all risk evaluations';
+      bar.style.backgroundColor = 'var(--positive)';
+      rationale.textContent = 'Consistent with cardholder profile and typical spending.';
+      if (actionsBox) actionsBox.style.display = 'none';
+    } else if (txData.status === 'FLAGGED') {
+      badge.classList.add('badge-flagged');
+      badge.textContent = 'FLAGGED';
+      statusTitle.textContent = 'Under Security Review';
+      statusDesc.textContent = 'Held for cardholder verification';
+      bar.style.backgroundColor = 'var(--warning)';
+      rationale.textContent = txData.reason || 'Unusual amount or new device signature detected.';
+      if (actionsBox) {
+        actionsBox.style.display = 'block';
+        document.getElementById('drawer-confirm-tx-id').value = txData.id;
+        document.getElementById('drawer-report-tx-id').value = txData.id;
+      }
+    } else {
+      badge.classList.add('badge-blocked');
+      badge.textContent = 'BLOCKED';
+      statusTitle.textContent = 'Blocked by AI Shield';
+      statusDesc.textContent = 'High anomaly threshold exceeded';
+      bar.style.backgroundColor = 'var(--accent)';
+      rationale.textContent = txData.reason || 'Severe deviation from standard cardholder behavior.';
+      if (actionsBox) {
+        actionsBox.style.display = 'block';
+        document.getElementById('drawer-confirm-tx-id').value = txData.id;
+        document.getElementById('drawer-report-tx-id').value = txData.id;
+      }
+    }
+
+    backdrop.classList.remove('hidden');
+    drawer.classList.add('open');
+    lucide.createIcons();
+  }
+  function closeTxDrawer() {
+    document.getElementById('tx-drawer')?.classList.remove('open');
+    document.getElementById('tx-drawer-backdrop')?.classList.add('hidden');
+  }
+
+  // 11. Modal Controls
+  function openNewTxModal() {
+    const devInput = document.getElementById('modal-deviceId');
+    if (devInput) devInput.value = 'dev-browser-' + Math.random().toString(36).substring(2, 7);
+    document.getElementById('new-tx-modal')?.classList.remove('hidden');
+    lucide.createIcons();
+  }
+  function closeNewTxModal() {
+    document.getElementById('new-tx-modal')?.classList.add('hidden');
+  }
+  function updateModalRiskHint() {
+    const amt = parseFloat(document.getElementById('modal-amount').value);
+    const hint = document.getElementById('modal-risk-hint');
+    const badge = document.getElementById('modal-risk-badge');
+    if (isNaN(amt) || amt <= 0) {
+      hint.textContent = 'Enter an amount to preview scoring';
+      badge.textContent = '—';
+      badge.style.color = 'var(--muted)';
+      return;
+    }
+    if (amt >= 50000) {
+      hint.textContent = '⚠ Near high threshold (₹50k+) — Likely FLAGGED';
+      badge.textContent = 'High Anomaly';
+      badge.style.color = 'var(--accent)';
+    } else if (amt >= 20000) {
+      hint.textContent = '⚡ Moderate amount — Standard verification';
+      badge.textContent = 'Moderate';
+      badge.style.color = 'var(--warning)';
+    } else {
+      hint.textContent = '✓ Low risk volume — Auto-cleared';
+      badge.textContent = 'Normal';
+      badge.style.color = 'var(--positive)';
+    }
+  }
+
+  // 12. AI Assistant Modal
+  function openAiModal() {
+    document.getElementById('ai-modal')?.classList.remove('hidden');
+    lucide.createIcons();
+  }
+  function closeAiModal() {
+    document.getElementById('ai-modal')?.classList.add('hidden');
+  }
+  function askAiPreset(q) {
+    document.getElementById('ai-input').value = q;
+    handleAiSubmit(new Event('submit'));
+  }
+  function handleAiSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('ai-input');
+    const q = input.value.trim();
+    if (!q) return;
+
+    const chatBox = document.getElementById('ai-chat-box');
+    chatBox.innerHTML += `
+      <div class="flex justify-end gap-2">
+        <div class="bg-[var(--ink)] text-[var(--bg)] p-3.5 rounded-xl max-w-[85%] font-medium">
+          <p>${q}</p>
+        </div>
+      </div>
+    `;
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    fetch('/dashboard/ai-query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q })
+    })
+    .then(r => r.json())
+    .then(data => {
+      chatBox.innerHTML += `
+        <div class="flex gap-2.5">
+          <div class="w-7 h-7 rounded-full bg-[var(--accent)] text-white flex items-center justify-center flex-shrink-0">
+            <i data-lucide="bot" style="width:14px;height:14px"></i>
+          </div>
+          <div class="bg-[var(--surface)] p-3.5 rounded-xl border border-[var(--border)] max-w-[85%]">
+            <p class="text-[var(--ink)] leading-relaxed">${data.answer}</p>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+      chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(() => {
+      chatBox.innerHTML += `
+        <div class="flex gap-2.5">
+          <div class="w-7 h-7 rounded-full bg-[var(--accent)] text-white flex items-center justify-center flex-shrink-0">
+            <i data-lucide="bot" style="width:14px;height:14px"></i>
+          </div>
+          <div class="bg-[var(--surface)] p-3.5 rounded-xl border border-[var(--border)] max-w-[85%] text-[var(--accent)]">
+            <p>Our rule engine is monitoring your transactions 24/7. All parameters remain within healthy limits.</p>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }
+
+  // 13. Live Polling for Alert Badges
   function pollAlerts() {
     fetch('/user/alerts/poll')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return;
-        const badge = document.getElementById('bell-badge');
+        const navBadge = document.getElementById('nav-bell-badge');
         const sidebarBadge = document.getElementById('sidebar-alert-badge');
+        const popList = document.getElementById('popover-alerts-list');
+
         if (data.unread > 0) {
-          if (badge) { badge.textContent = data.unread; badge.classList.remove('hidden'); }
+          if (navBadge) { navBadge.textContent = data.unread; navBadge.classList.remove('hidden'); }
           if (sidebarBadge) { sidebarBadge.textContent = data.unread; sidebarBadge.classList.remove('hidden'); }
-          // Show toast for new alert
-          if (data.newAlerts && data.newAlerts.length > 0) {
-            const a = data.newAlerts[0];
-            showToast(`⚠ New alert: ₹${a.amount} at ${a.merchant} — Score: ${a.fraudScore}`, 'warn');
-          }
         } else {
-          if (badge) badge.classList.add('hidden');
+          if (navBadge) navBadge.classList.add('hidden');
           if (sidebarBadge) sidebarBadge.classList.add('hidden');
         }
+
+        if (popList && data.newAlerts && data.newAlerts.length > 0) {
+          popList.innerHTML = data.newAlerts.map(a => `
+            <div class="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)] flex items-start justify-between gap-2">
+              <div>
+                <p class="font-bold text-[var(--ink)]">₹${Number(a.amount).toLocaleString('en-IN')} — ${a.merchant}</p>
+                <p class="text-[11px] text-[var(--muted)]">Score: ${Math.round(a.fraudScore * 100)}% · ${a.status}</p>
+              </div>
+              <a href="/dashboard/alerts" onclick="switchPage('alerts', true); toggleAlertPopover(); return false;" class="text-[11px] font-semibold text-[var(--accent)] hover:underline flex-shrink-0">Review</a>
+            </div>
+          `).join('');
+        } else if (popList) {
+          popList.innerHTML = '<p class="text-[var(--muted)] text-center py-2">No unread alerts. You are fully protected.</p>';
+        }
       })
-      .catch(() => {}); // silently fail if not a user page
+      .catch(() => {});
   }
 
-  // Poll every 15 seconds
-  setInterval(pollAlerts, 15000);
-  // Initial poll after 2s
-  setTimeout(pollAlerts, 2000);
+  document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    const s = document.getElementById('flash-success');
+    const e = document.getElementById('flash-error');
+    if (s && s.dataset.msg) showToast(s.dataset.msg, 'success');
+    if (e && e.dataset.msg) showToast(e.dataset.msg, 'error');
+
+    pollAlerts();
+    setInterval(pollAlerts, 15000);
+  });
 </script>
 
 </body>

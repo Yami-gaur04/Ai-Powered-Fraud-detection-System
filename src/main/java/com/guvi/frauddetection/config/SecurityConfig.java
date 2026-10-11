@@ -3,7 +3,6 @@ package com.guvi.frauddetection.config;
 import com.guvi.frauddetection.security.AppUserDetailsService;
 import com.guvi.frauddetection.security.JwtAuthFilter;
 import com.guvi.frauddetection.security.JwtUtil;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -28,11 +27,15 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
  */
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final AppUserDetailsService userDetailsService;
+
+    public SecurityConfig(JwtUtil jwtUtil, AppUserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
 
     /* ------------------------------------------------------------------ */
     /* Chain 1 – REST API: stateless, JWT, higher @Order so it runs first  */
@@ -62,11 +65,12 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/assets/**", "/error", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/login", "/register", "/assets/**", "/error", "/favicon.ico", "/servlet/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/dashboard", "/dashboard/**", "/user/**").hasAnyRole("USER", "ADMIN")
                 .anyRequest().authenticated())
             .formLogin(form -> form
                 .loginPage("/login")
@@ -75,7 +79,7 @@ public class SecurityConfig {
                     // Role-based redirect after login
                     boolean isAdmin = authentication.getAuthorities().stream()
                         .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-                    res.sendRedirect(isAdmin ? "/admin/dashboard" : "/user/dashboard");
+                    res.sendRedirect(isAdmin ? "/admin/dashboard" : "/dashboard/overview");
                 })
                 .failureUrl("/login?error=true")
                 .permitAll())
