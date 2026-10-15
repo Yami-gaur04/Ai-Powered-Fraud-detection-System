@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>500 Internal Error — FraudShield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --bg: #FBFAF7; --surface: #FFFFFF; --border: #E8E6E1; --ink: #17181C;
+      --muted: #6B6B70; --label: #8A8A90; --accent: #C0302B; --warning: #D98A00;
+      --warning-soft: rgba(217, 138, 0, 0.12);
+    }
+    body { background-color: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; }
+    .fs-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 1.25rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04); }
+    .btn-primary { background-color: var(--ink); color: var(--bg); border-radius: 9999px; font-weight: 600; padding: 0.5rem 1.25rem; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-secondary { background-color: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 9999px; font-weight: 500; padding: 0.5rem 1.125rem; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-md text-center fs-card p-8 space-y-5">
+    <div class="w-16 h-16 rounded-2xl bg-[var(--warning-soft)] text-[var(--warning)] mx-auto flex items-center justify-center">
+      <i data-lucide="server-crash" class="w-8 h-8"></i>
+    </div>
+    <div>
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--warning)]">Error 500 · Server Fault</span>
+      <h1 class="text-2xl font-bold text-[var(--ink)] mt-1">Temporary System Error</h1>
+      <p class="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
+        The detection engine encountered an unexpected condition. Your transaction data remains safe.
+      </p>
+    </div>
+    <div th:if="${errorMessage != null}"
+         class="bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl p-3 text-xs text-[var(--ink)] font-mono text-left">
+      <span class="text-[var(--label)]">Details: </span>
+      <span th:text="${errorMessage}">Error message</span>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+      <a href="/dashboard" class="btn-primary justify-center">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        <span>Return to Dashboard</span>
+      </a>
+      <button onclick="location.reload()" class="btn-secondary justify-center">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        <span>Try Again</span>
+      </button>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

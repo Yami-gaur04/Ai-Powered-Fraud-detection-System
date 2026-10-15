@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Transaction Result — FraudShield</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="/user/dashboard?tab=transactions" class="inline-flex items-center gap-2 text-xs text-[var(--muted)] hover:text-[var(--ink)] transition">
+      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+      <span>Back to Transactions</span>
+    </a>
+    <span class="fs-eyebrow">Transaction ID: <span class="font-mono text-[var(--ink)]" th:text="'#' + ${result.id}">#123</span></span>
+  </div>
+
+  <!-- Status Hero Card -->
+  <div class="fs-card p-6 sm:p-8 text-center relative">
+    <!-- Status Icon -->
+    <div class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-4"
+         th:classappend="${result.status.name() == 'APPROVED' ? 'bg-[var(--positive-soft)] text-[var(--positive)]' : (result.status.name() == 'FLAGGED' ? 'bg-[var(--warning-soft)] text-[var(--warning)]' : 'bg-[var(--accent-soft)] text-[var(--accent)]')}">
+      <i th:if="${result.status.name() == 'APPROVED'}" data-lucide="shield-check" class="w-8 h-8"></i>
+      <i th:if="${result.status.name() == 'FLAGGED'}" data-lucide="alert-triangle" class="w-8 h-8"></i>
+      <i th:if="${result.status.name() == 'BLOCKED'}" data-lucide="shield-alert" class="w-8 h-8"></i>
+    </div>
+
+    <!-- Status Badge -->
+    <span th:text="${result.status.name()}"
+          th:classappend="${result.status.name() == 'APPROVED'} ? 'badge-approved' : (${result.status.name() == 'FLAGGED'} ? 'badge-flagged' : 'badge-blocked')"
+          class="badge-pill mb-3">APPROVED</span>
+
+    <h2 class="text-xl sm:text-2xl font-bold text-[var(--ink)] mt-1 mb-1"
+        th:text="${result.status.name() == 'APPROVED' ? 'Transaction Authorized & Cleared' : (result.status.name() == 'FLAGGED' ? 'Transaction Held for Verification' : 'Transaction Blocked as High Risk')}">
+      Status Title
+    </h2>
+    <p class="text-xs text-[var(--muted)] max-w-md mx-auto mb-6" th:text="${result.message}">Message from detection engine</p>
+
+    <!-- Risk Score Gauge Widget -->
+    <div class="inline-flex flex-col items-center bg-[var(--surface-subtle)] border border-[var(--border)] rounded-2xl p-4 px-8 max-w-xs w-full">
+      <span class="fs-eyebrow mb-1">AI Anomaly Score</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold font-mono"
+              th:classappend="${result.fraudScore < 0.3 ? 'text-[var(--positive)]' : (result.fraudScore < 0.7 ? 'text-[var(--warning)]' : 'text-[var(--accent)]')}"
+              th:text="${#numbers.formatDecimal(result.fraudScore * 100, 1, 1)} + '%'">12.5%</span>
+      </div>
+
+      <div class="w-full thin-progress-track mt-3">
+        <div class="thin-progress-bar"
+             th:style="'width: ' + ${result.fraudScore * 100} + '%; background-color:' + (${result.fraudScore < 0.3 ? 'var(--positive)' : (result.fraudScore < 0.7 ? 'var(--warning)' : 'var(--accent)')})"></div>
+      </div>
+      <div class="flex justify-between w-full text-[10px] text-[var(--label)] mt-1 font-semibold uppercase">
+        <span>Safe</span>
+        <span>Flagged</span>
+        <span>Blocked</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Transaction Data -->
+  <div class="fs-card p-6">
+    <div class="pb-3 border-b border-[var(--border)] mb-4 flex items-center gap-2">
+      <i data-lucide="receipt" class="w-4 h-4 text-[var(--accent)]"></i>
+      <h3 class="text-sm font-bold text-[var(--ink)]">Transaction Receipt & Signal Breakdown</h3>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Amount</span>
+        <span class="text-base font-bold font-mono text-[var(--ink)]">₹<span th:text="${#numbers.formatDecimal(result.amount, 1, 'COMMA', 2, 'POINT')}">1,200.00</span></span>
+      </div>
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Merchant</span>
+        <span class="text-sm font-bold text-[var(--ink)] truncate block" th:text="${result.merchant}">Amazon India</span>
+      </div>
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Payment Channel</span>
+        <span class="text-xs font-semibold text-[var(--ink)]" th:text="${result.paymentMethod}">UPI</span>
+      </div>
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Location</span>
+        <span class="text-xs font-semibold text-[var(--ink)]" th:text="${result.location}">Mumbai</span>
+      </div>
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Device Fingerprint</span>
+        <span class="text-xs font-mono text-[var(--muted)] truncate block" th:text="${result.deviceId}">dev-browser-xyz</span>
+      </div>
+      <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+        <span class="text-[var(--muted)] block text-[10px] font-semibold uppercase">Timestamp</span>
+        <span class="text-xs font-mono text-[var(--ink)]" th:text="${result.transactionTime != null ? #temporals.format(result.transactionTime, 'dd MMM yyyy, HH:mm:ss') : 'Just now'}">Today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+    <a href="/user/transactions/new" class="btn-primary text-xs py-2.5 px-5 w-full sm:w-auto justify-center">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>Simulate Another</span>
+    </a>
+    <a href="/user/dashboard?tab=transactions" class="btn-secondary text-xs py-2.5 px-5 w-full sm:w-auto justify-center">
+      <i data-lucide="list" class="w-4 h-4"></i>
+      <span>All Transactions</span>
+    </a>
+    <a href="/user/dashboard?tab=overview" class="btn-secondary text-xs py-2.5 px-5 w-full sm:w-auto justify-center">
+      <i data-lucide="home" class="w-4 h-4"></i>
+      <span>Overview</span>
+    </a>
+  </div>
+
+</div>
+
+</th:block>
+</body>
+</html>

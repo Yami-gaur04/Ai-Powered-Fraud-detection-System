@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — FraudShield</title>
+  <meta name="description" content="Sign in to FraudShield AI-Powered Fraud Detection"/>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    html {
+      font-size: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    :root {
+      /* Palette */
+      --bg: #FBFAF7;
+      --surface: #FFFFFF;
+      --surface-subtle: #F6F5F0;
+      --border: #E8E6E1;
+      --border-subtle: #F0EEE9;
+      --ink: #17181C;
+      --muted: #6B6B70;
+      --label: #8A8A90;
+      --accent: #C0302B;
+      --accent-soft: rgba(192, 48, 43, 0.08);
+      --positive: #1E7B3A;
+      --positive-soft: rgba(30, 123, 58, 0.08);
+
+      /* Typography & Scale Tokens */
+      --font-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);       /* 15px - 17px */
+      --font-secondary: clamp(0.8125rem, 0.8rem + 0.15vw, 0.875rem); /* 13px - 14px */
+      --font-eyebrow: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);    /* 12px - 13px */
+      --font-title: clamp(1.75rem, 1.6rem + 0.5vw, 2rem);             /* 28px - 32px */
+      --input-height: 52px;
+      --btn-height: 52px;
+    }
+    body.dark-mode {
+      --bg: #121214;
+      --surface: #18181C;
+      --surface-subtle: #202026;
+      --border: #2A2A30;
+      --border-subtle: #222228;
+      --ink: #F0F0F3;
+      --muted: #8E8E98;
+      --label: #72727C;
+      --accent: #E04D47;
+      --accent-soft: rgba(224, 77, 71, 0.15);
+      --positive: #2BB356;
+      --positive-soft: rgba(43, 179, 86, 0.15);
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: var(--font-body);
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+    .fs-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.05);
+    }
+    .input-field {
+      height: var(--input-height);
+      font-size: clamp(0.9375rem, 0.9rem + 0.1vw, 1rem);
+    }
+    .btn-action {
+      height: var(--btn-height);
+      font-size: clamp(0.9375rem, 0.9rem + 0.1vw, 1rem);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 transition-colors">
+
+  <!-- Top bar with brand & theme toggle (matching 480px width) -->
+  <div class="w-full max-w-[480px] flex items-center justify-between mb-6 sm:mb-8">
+    <a href="/login" class="flex items-center gap-3 group">
+      <div class="w-10 h-10 rounded-xl bg-[var(--accent)] flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <span class="font-bold text-lg tracking-tight text-[var(--ink)] block leading-tight">FraudShield</span>
+        <span class="block text-[11px] font-semibold text-[var(--label)] uppercase tracking-wider">AI Security</span>
+      </div>
+    </a>
+    <button onclick="toggleTheme()" class="p-2.5 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition" aria-label="Toggle light/dark theme">
+      <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- Sign-in Card (Widened to 440-480px, expanded padding, generous scaling) -->
+  <div class="w-full max-w-[480px] fs-card p-7 sm:p-9">
+    <div class="mb-6">
+      <span class="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wider text-[var(--label)]">Secure Portal</span>
+      <h1 class="text-[28px] sm:text-[32px] font-bold text-[var(--ink)] tracking-tight leading-tight mt-1.5">Sign in to your account</h1>
+      <p class="text-[13px] sm:text-[14px] text-[var(--muted)] mt-1.5">Access real-time transaction protection and monitoring</p>
+    </div>
+
+    <!-- Flash Alerts -->
+    <div th:if="${error}" class="p-3.5 rounded-xl border border-red-200 bg-[var(--accent-soft)] text-[var(--accent)] text-[13px] font-medium flex items-center gap-2.5 mb-5">
+      <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span th:text="${error}">Invalid username or password</span>
+    </div>
+    <div th:if="${logoutMsg}" class="p-3.5 rounded-xl border border-emerald-200 bg-[var(--positive-soft)] text-[var(--positive)] text-[13px] font-medium flex items-center gap-2.5 mb-5">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span th:text="${logoutMsg}">You have been safely signed out</span>
+    </div>
+    <div th:if="${success}" class="p-3.5 rounded-xl border border-emerald-200 bg-[var(--positive-soft)] text-[var(--positive)] text-[13px] font-medium flex items-center gap-2.5 mb-5">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span th:text="${success}">Account created successfully</span>
+    </div>
+
+    <form method="post" th:action="@{/login}" class="space-y-5" id="login-form">
+
+      <div>
+        <label for="username" class="block text-[13px] sm:text-[14px] font-semibold text-[var(--ink)] mb-2">Email address</label>
+        <div class="relative">
+          <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)]"></i>
+          <input type="email" id="username" name="username" required autocomplete="email"
+                 placeholder="name@company.com"
+                 class="w-full input-field bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl pl-12 pr-4 text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label for="password" class="block text-[13px] sm:text-[14px] font-semibold text-[var(--ink)]">Password</label>
+          <button type="button" onclick="showForgotModal()" class="text-[13px] text-[var(--accent)] hover:underline font-medium">Forgot password?</button>
+        </div>
+        <div class="relative">
+          <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)]"></i>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+                 placeholder="••••••••"
+                 class="w-full input-field bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl pl-12 pr-12 text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+          <button type="button" onclick="togglePasswordVisibility()" class="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] p-1" aria-label="Toggle password view">
+            <i id="pwd-icon" data-lucide="eye" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" id="login-submit-btn"
+              class="w-full btn-action bg-[var(--ink)] text-[var(--bg)] font-semibold rounded-full hover:opacity-90 transition flex items-center justify-center gap-2 mt-3 shadow-sm">
+        <i data-lucide="log-in" class="w-5 h-5"></i>
+        <span>Sign in</span>
+      </button>
+    </form>
+
+    <!-- Quick Demo Logins -->
+    <div class="mt-7 pt-6 border-t border-[var(--border)]">
+      <p class="text-[12px] font-semibold text-[var(--label)] uppercase tracking-wider mb-3">Quick Demo Access</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button type="button" onclick="fillDemo('demo@fraudshield.io', 'Demo@123')"
+                class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] hover:bg-[var(--surface)] text-left transition group">
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] font-bold text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors">Demo User</span>
+            <i data-lucide="user" class="w-4 h-4 text-[var(--muted)]"></i>
+          </div>
+          <span class="block text-[12px] text-[var(--muted)] truncate mt-1">demo@fraudshield.io</span>
+        </button>
+        <button type="button" onclick="fillDemo('admin@fraud.com', 'Admin@123')"
+                class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] hover:bg-[var(--surface)] text-left transition group">
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] font-bold text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors">Admin Console</span>
+            <i data-lucide="shield" class="w-4 h-4 text-[var(--accent)]"></i>
+          </div>
+          <span class="block text-[12px] text-[var(--muted)] truncate mt-1">admin@fraud.com</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Create account link -->
+    <p class="text-center text-[13px] sm:text-[14px] text-[var(--muted)] mt-6">
+      Don't have an account?
+      <a href="/register" class="font-semibold text-[var(--accent)] hover:underline ml-1">Create an account</a>
+    </p>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgot-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="fs-card max-w-sm w-full p-6 shadow-xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
+        <h3 class="text-base font-bold text-[var(--ink)]">Reset Password</h3>
+        <button onclick="hideForgotModal()" class="p-1 text-[var(--muted)] hover:text-[var(--ink)]"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <p class="text-[13px] text-[var(--muted)] mb-5">For demo environments, passwords can be reset by our administrator or you can use the quick demo logins above.</p>
+      <button type="button" onclick="hideForgotModal()" class="w-full bg-[var(--ink)] text-[var(--bg)] py-2.5 rounded-full text-[13px] font-semibold">Understood</button>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function togglePasswordVisibility() {
+      const p = document.getElementById('password');
+      const icon = document.getElementById('pwd-icon');
+      if (p.type === 'password') {
+        p.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        p.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
+    function fillDemo(email, pass) {
+      document.getElementById('username').value = email;
+      document.getElementById('password').value = pass;
+      document.getElementById('login-submit-btn').focus();
+    }
+
+    function showForgotModal() {
+      document.getElementById('forgot-modal').classList.remove('hidden');
+    }
+    function hideForgotModal() {
+      document.getElementById('forgot-modal').classList.add('hidden');
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      try {
+        localStorage.setItem('fs_theme', isDark ? 'dark' : 'light');
+      } catch (e) {}
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    try {
+      if (localStorage.getItem('fs_theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        updateThemeIcon(true);
+      }
+    } catch (e) {}
+  </script>
+</body>
+</html>

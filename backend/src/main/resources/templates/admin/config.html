@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Configuration Settings — FraudShield</title></head>
+<body>
+<th:block th:fragment="content">
+
+  <!-- Header -->
+  <div class="fs-card p-6 sm:p-8 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <span class="fs-eyebrow">Engine Calibration</span>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--ink)] mt-0.5">Fraud Detection Thresholds & Weights</h1>
+        <p class="text-xs text-[var(--muted)] mt-1">Configure automated hold/block cutoffs, velocity limits, and multi-factor weightings.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Main Config Form (Left 2 cols) -->
+    <div class="lg:col-span-2 fs-card p-6 sm:p-8">
+      <div class="pb-3 border-b border-[var(--border)] mb-5 flex items-center gap-2">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-[var(--accent)]"></i>
+        <h3 class="text-sm font-bold text-[var(--ink)]">Detection Limits & Cutoffs</h3>
+      </div>
+
+      <form method="post" action="/admin/config" id="config-form" class="space-y-6">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- Thresholds section -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="flagThreshold" class="block text-xs font-semibold text-[var(--ink)] mb-1">
+              Flag Threshold (Score ≥ Hold) *
+            </label>
+            <input type="number" id="flagThreshold" name="flagThreshold" step="0.01" min="0" max="0.99"
+                   th:value="${config.flagThreshold}" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2 px-3 text-xs font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                   oninput="updateClientValidation()"/>
+            <p class="text-[10px] text-[var(--muted)] mt-1">Transactions scoring above this trigger a cardholder hold.</p>
+          </div>
+
+          <div>
+            <label for="blockThreshold" class="block text-xs font-semibold text-[var(--ink)] mb-1">
+              Block Threshold (Score ≥ Block) *
+            </label>
+            <input type="number" id="blockThreshold" name="blockThreshold" step="0.01" min="0.01" max="1"
+                   th:value="${config.blockThreshold}" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2 px-3 text-xs font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                   oninput="updateClientValidation()"/>
+            <p class="text-[10px] text-[var(--muted)] mt-1">High-anomaly transactions immediately blocked.</p>
+          </div>
+
+          <div>
+            <label for="highAmountLimit" class="block text-xs font-semibold text-[var(--ink)] mb-1">
+              High Amount Trigger (INR) *
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--muted)]">₹</span>
+              <input type="number" id="highAmountLimit" name="highAmountLimit" step="100" min="1"
+                     th:value="${config.highAmountLimit}" required
+                     class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2 pl-7 pr-3 text-xs font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+            </div>
+            <p class="text-[10px] text-[var(--muted)] mt-1">Single transactions exceeding this receive amount penalties.</p>
+          </div>
+
+          <div>
+            <label for="maxTxPerHour" class="block text-xs font-semibold text-[var(--ink)] mb-1">
+              Velocity Limit (TXs / Hour) *
+            </label>
+            <input type="number" id="maxTxPerHour" name="maxTxPerHour" min="1"
+                   th:value="${config.maxTxPerHour}" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2 px-3 text-xs font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+            <p class="text-[10px] text-[var(--muted)] mt-1">Rapid-fire transactions per card trigger velocity checks.</p>
+          </div>
+        </div>
+
+        <!-- Weights section -->
+        <div class="border-t border-[var(--border)] pt-5">
+          <div class="mb-4">
+            <span class="fs-eyebrow">Scoring Model Distribution</span>
+            <h4 class="text-sm font-bold text-[var(--ink)] mt-0.5">Signal Weights (0.0 to 1.0)</h4>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-semibold text-[var(--ink)]">Amount Deviation</span>
+                <span id="aw-val" class="font-mono font-bold text-[var(--accent)]" th:text="${config.amountWeight}">0.40</span>
+              </div>
+              <input type="range" name="amountWeight" id="amountWeight" min="0" max="1" step="0.05"
+                     th:value="${config.amountWeight}" class="w-full accent-[var(--accent)] cursor-pointer"
+                     oninput="document.getElementById('aw-val').textContent = parseFloat(this.value).toFixed(2)"/>
+            </div>
+
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-semibold text-[var(--ink)]">Velocity Burst</span>
+                <span id="vw-val" class="font-mono font-bold text-[var(--accent)]" th:text="${config.velocityWeight}">0.30</span>
+              </div>
+              <input type="range" name="velocityWeight" id="velocityWeight" min="0" max="1" step="0.05"
+                     th:value="${config.velocityWeight}" class="w-full accent-[var(--accent)] cursor-pointer"
+                     oninput="document.getElementById('vw-val').textContent = parseFloat(this.value).toFixed(2)"/>
+            </div>
+
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-semibold text-[var(--ink)]">Geolocation Leap</span>
+                <span id="lw-val" class="font-mono font-bold text-[var(--accent)]" th:text="${config.locationWeight}">0.15</span>
+              </div>
+              <input type="range" name="locationWeight" id="locationWeight" min="0" max="1" step="0.05"
+                     th:value="${config.locationWeight}" class="w-full accent-[var(--accent)] cursor-pointer"
+                     oninput="document.getElementById('lw-val').textContent = parseFloat(this.value).toFixed(2)"/>
+            </div>
+
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-semibold text-[var(--ink)]">Device Fingerprint</span>
+                <span id="dw-val" class="font-mono font-bold text-[var(--accent)]" th:text="${config.deviceWeight}">0.15</span>
+              </div>
+              <input type="range" name="deviceWeight" id="deviceWeight" min="0" max="1" step="0.05"
+                     th:value="${config.deviceWeight}" class="w-full accent-[var(--accent)] cursor-pointer"
+                     oninput="document.getElementById('dw-val').textContent = parseFloat(this.value).toFixed(2)"/>
+            </div>
+          </div>
+        </div>
+
+        <p id="validation-error" class="text-xs text-[var(--accent)] font-semibold hidden"></p>
+
+        <div class="flex gap-3 pt-2">
+          <button type="submit" id="save-btn" class="btn-primary text-xs py-2.5 px-6">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            <span>Apply Engine Rules</span>
+          </button>
+          <button type="reset" class="btn-secondary text-xs py-2.5 px-4">
+            <span>Reset Defaults</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Info Sidebar (Right 1 col) -->
+    <div class="space-y-6">
+      <div class="fs-card p-6 space-y-3">
+        <h4 class="text-xs font-bold text-[var(--label)] uppercase tracking-wider">Live Rule Status</h4>
+        <div class="divide-y divide-[var(--border-subtle)] text-xs">
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Hold Threshold</span>
+            <span class="font-mono font-bold text-[var(--warning)]" th:text="${config.flagThreshold}">0.40</span>
+          </div>
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Block Threshold</span>
+            <span class="font-mono font-bold text-[var(--accent)]" th:text="${config.blockThreshold}">0.75</span>
+          </div>
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Max Tx / Hour</span>
+            <span class="font-mono font-bold text-[var(--ink)]" th:text="${config.maxTxPerHour}">10</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fs-card p-6 space-y-3">
+        <h4 class="text-xs font-bold text-[var(--label)] uppercase tracking-wider">Scoring Formula</h4>
+        <p class="text-xs text-[var(--muted)] leading-relaxed">
+          FraudScore = (w_amount × S_amount) + (w_velocity × S_velocity) + (w_location × S_location) + (w_device × S_device)
+        </p>
+        <p class="text-[11px] text-[var(--muted)]">
+          The sum of all signals normalizes to a 0.0 – 1.0 risk score in real time.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+
+    function updateClientValidation() {
+      const flag = parseFloat(document.getElementById('flagThreshold').value);
+      const block = parseFloat(document.getElementById('blockThreshold').value);
+      const errEl = document.getElementById('validation-error');
+      const saveBtn = document.getElementById('save-btn');
+      if (!isNaN(flag) && !isNaN(block) && flag >= block) {
+        errEl.textContent = 'Flag threshold must be strictly lower than Block threshold.';
+        errEl.classList.remove('hidden');
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50');
+      } else {
+        errEl.classList.add('hidden');
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('opacity-50');
+      }
+    }
+  </script>
+
+</th:block>
+</body>
+</html>

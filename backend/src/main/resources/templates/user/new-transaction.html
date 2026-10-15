@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>New Transaction — FraudShield</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="max-w-xl mx-auto">
+  <div class="mb-6">
+    <a href="/user/dashboard?tab=transactions" class="text-xs text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center gap-1.5 mb-2">
+      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+      <span>Back to Transactions</span>
+    </a>
+    <span class="fs-eyebrow block">Simulation & Real-Time Scoring</span>
+    <h1 class="text-2xl font-bold text-[var(--ink)] mt-0.5">Submit New Transaction</h1>
+    <p class="text-xs text-[var(--muted)] mt-1">Simulate a payment to test FraudShield's AI anomaly scoring model.</p>
+  </div>
+
+  <!-- Flash Error -->
+  <div th:if="${error}" class="p-3.5 rounded-xl border border-red-200 bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-medium flex items-center gap-2.5 mb-5">
+    <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+    <span th:text="${error}">An error occurred</span>
+  </div>
+
+  <div class="fs-card p-6 sm:p-8">
+    <form method="post" action="/user/transactions/new" id="tx-form" class="space-y-4">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <!-- Amount -->
+      <div>
+        <label for="amount" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Amount (INR) *</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted)]">₹</span>
+          <input type="number" id="amount" name="amount" step="0.01" min="0.01" required placeholder="0.00"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-3 pl-8 pr-4 text-base font-bold font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                 oninput="updateRiskHint()"/>
+        </div>
+      </div>
+
+      <!-- Merchant / Receiver -->
+      <div>
+        <label for="merchant" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Merchant / Receiver *</label>
+        <div class="relative">
+          <i data-lucide="store" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="text" id="merchant" name="merchant" required placeholder="e.g. Amazon India, Zara, Uber"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Payment Method -->
+        <div>
+          <label for="paymentMethod" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Payment Method</label>
+          <div class="relative">
+            <i data-lucide="credit-card" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+            <select id="paymentMethod" name="paymentMethod"
+                    class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]">
+              <option value="ONLINE">Online Transfer</option>
+              <option value="UPI">UPI Instant</option>
+              <option value="CARD">Credit / Debit Card</option>
+              <option value="NEFT">NEFT / Wire</option>
+              <option value="RTGS">RTGS</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label for="location" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Location *</label>
+          <div class="relative">
+            <i data-lucide="map-pin" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+            <input type="text" id="location" name="location" required placeholder="e.g. Mumbai, Bengaluru"
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Device ID -->
+      <div>
+        <label for="deviceId" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Device Identifier *</label>
+        <div class="relative">
+          <i data-lucide="smartphone" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="text" id="deviceId" name="deviceId" required placeholder="dev-browser-chrome"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+      </div>
+
+      <!-- Live Risk Preview Box -->
+      <div class="p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] space-y-2">
+        <div class="flex justify-between items-center text-xs">
+          <span class="fs-eyebrow">Estimated Risk Preview</span>
+          <span id="risk-pct" class="font-mono font-bold text-[var(--ink)]">—</span>
+        </div>
+        <div class="thin-progress-track">
+          <div id="risk-bar" class="thin-progress-bar" style="width: 0%;"></div>
+        </div>
+        <p id="risk-label" class="text-[11px] text-[var(--muted)]">Enter an amount to preview rule sensitivity</p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <a href="/user/dashboard?tab=transactions" class="btn-secondary flex-1 justify-center text-xs py-2.5">Cancel</a>
+        <button type="submit" id="submit-btn" class="btn-primary flex-1 justify-center text-xs py-2.5">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span>Analyse & Submit</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  if (!document.getElementById('deviceId').value) {
+    document.getElementById('deviceId').value = 'dev-browser-' + Math.random().toString(36).substring(2, 7);
+  }
+});
+
+function updateRiskHint() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const bar = document.getElementById('risk-bar');
+  const pct = document.getElementById('risk-pct');
+  const label = document.getElementById('risk-label');
+  if (isNaN(amount) || amount <= 0) {
+    bar.style.width = '0%'; pct.textContent = '—'; label.textContent = 'Enter an amount to preview rule sensitivity'; return;
+  }
+  const HIGH = 50000;
+  const score = Math.min(1, amount / (HIGH * 2));
+  const pctVal = Math.round(score * 100);
+  bar.style.width = pctVal + '%';
+  if (score >= 0.7) {
+    bar.style.backgroundColor = 'var(--accent)';
+    label.textContent = '⚠ High risk volume (₹50k+) — Will likely be held for verification';
+    label.style.color = 'var(--accent)';
+  } else if (score >= 0.35) {
+    bar.style.backgroundColor = 'var(--warning)';
+    label.textContent = '⚡ Moderate amount — Standard verification rules apply';
+    label.style.color = 'var(--warning)';
+  } else {
+    bar.style.backgroundColor = 'var(--positive)';
+    label.textContent = '✓ Low risk volume — Auto-cleared by AI';
+    label.style.color = 'var(--positive)';
+  }
+  pct.textContent = pctVal + '%';
+}
+</script>
+
+</th:block>
+</body>
+</html>

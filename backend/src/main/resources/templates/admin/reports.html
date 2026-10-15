@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Detection Reports & Cases — FraudShield</title></head>
+<body>
+<th:block th:fragment="content">
+
+  <!-- Header Strip -->
+  <div class="fs-card p-6 sm:p-8 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <span class="fs-eyebrow">Audit & Investigation</span>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--ink)] mt-0.5">Fraud Detection Reports</h1>
+        <p class="text-xs text-[var(--muted)] mt-1">Investigate anomaly alerts, examine transaction payloads, and label fraud cases.</p>
+      </div>
+      <a th:href="'/admin/reports/export?format=csv' + (${status != null} ? '&status=' + ${status} : '')"
+         class="btn-secondary text-xs py-2 px-4 flex-shrink-0">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+        <span>Export CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="fs-card p-4 sm:p-5 mb-6">
+    <form method="get" action="/admin/reports" class="flex flex-wrap items-center gap-3">
+      <!-- Search -->
+      <div class="relative flex-1 min-w-[220px]">
+        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+        <input type="text" name="search" th:value="${search}" placeholder="Search by email, merchant, reason…"
+               class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--ink)] rounded-full px-4 py-2 pl-10 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent)]"/>
+      </div>
+
+      <!-- Status filter -->
+      <select name="status" class="bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--ink)] font-semibold rounded-full px-4 py-2 text-xs focus:outline-none focus:border-[var(--accent)]">
+        <option value="">All Statuses</option>
+        <option value="OPEN" th:selected="${status == 'OPEN'}">Open Triage</option>
+        <option value="CONFIRMED_FRAUD" th:selected="${status == 'CONFIRMED_FRAUD'}">Confirmed Fraud</option>
+        <option value="FALSE_POSITIVE" th:selected="${status == 'FALSE_POSITIVE'}">False Positive</option>
+      </select>
+
+      <!-- Sort -->
+      <select name="sort" class="bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--ink)] rounded-full px-3 py-2 text-xs focus:outline-none">
+        <option value="createdAt" th:selected="${sort == 'createdAt'}">Sort: Date</option>
+        <option value="amount" th:selected="${sort == 'amount'}">Sort: Amount</option>
+        <option value="fraudScore" th:selected="${sort == 'fraudScore'}">Sort: Risk Score</option>
+      </select>
+      <select name="dir" class="bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--ink)] rounded-full px-3 py-2 text-xs focus:outline-none">
+        <option value="desc" th:selected="${dir == 'desc'}">Descending</option>
+        <option value="asc" th:selected="${dir == 'asc'}">Ascending</option>
+      </select>
+
+      <button type="submit" class="btn-primary text-xs py-2 px-4">
+        Filter
+      </button>
+    </form>
+  </div>
+
+  <!-- ── Cases Table ── -->
+  <div class="fs-card overflow-hidden mb-6">
+    <div class="p-4 sm:p-5 border-b border-[var(--border)] flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-bold text-[var(--ink)]">Investigation Queue</h3>
+        <p class="text-xs text-[var(--muted)] mt-0.5">Showing <span th:text="${cases.size()}">0</span> of <span th:text="${totalItems}">0</span> cases</p>
+      </div>
+    </div>
+
+    <div class="fs-table-wrap">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[var(--surface-subtle)] text-[var(--label)] uppercase font-semibold text-[10px] tracking-wider border-b border-[var(--border)]">
+          <tr>
+            <th class="py-3.5 px-4 sm:px-6 whitespace-nowrap">Case ID</th>
+            <th class="py-3.5 px-4 whitespace-nowrap">User</th>
+            <th class="py-3.5 px-4 text-right whitespace-nowrap">Amount</th>
+            <th class="py-3.5 px-4 whitespace-nowrap">Merchant</th>
+            <th class="py-3.5 px-4 whitespace-nowrap">AI Risk Score</th>
+            <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+            <th class="py-3.5 px-4 whitespace-nowrap">Timestamp</th>
+            <th class="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[var(--border-subtle)]">
+          <tr th:each="c : ${cases}" class="hover:bg-[var(--surface-subtle)] transition">
+            <td class="py-3.5 px-4 sm:px-6 font-mono font-bold text-[var(--ink)]">#<span th:text="${c.caseId}">1</span></td>
+            <td class="py-3.5 px-4 text-[var(--ink)] font-medium truncate max-w-[140px]" th:text="${c.userEmail}">user@example.com</td>
+            <td class="py-3.5 px-4 font-mono font-bold text-[var(--ink)]">₹<span th:text="${#numbers.formatDecimal(c.amount, 1, 'COMMA', 2, 'POINT')}">1,200.00</span></td>
+            <td class="py-3.5 px-4 text-[var(--muted)] truncate max-w-[120px]" th:text="${c.merchant}">Store</td>
+            <td class="py-3.5 px-4">
+              <div class="flex items-center gap-2">
+                <div class="w-12 thin-progress-track">
+                  <div class="thin-progress-bar"
+                       th:style="'width:' + (${c.fraudScore != null ? c.fraudScore * 100 : 0}) + '%; background-color:' + (${c.fraudScore != null && c.fraudScore >= 0.7} ? 'var(--accent)' : (${c.fraudScore != null && c.fraudScore >= 0.4} ? 'var(--warning)' : 'var(--positive)'))"></div>
+                </div>
+                <span class="font-mono font-bold text-[11px] text-[var(--ink)]" th:text="${c.fraudScore != null ? #numbers.formatDecimal(c.fraudScore * 100, 0, 0) + '%' : '—'}">85%</span>
+              </div>
+            </td>
+            <td class="py-3.5 px-4">
+              <span th:text="${c.caseStatus}"
+                    th:classappend="${c.caseStatus.name() == 'OPEN'} ? 'badge-flagged' : (${c.caseStatus.name() == 'CONFIRMED_FRAUD'} ? 'badge-blocked' : 'badge-approved')"
+                    class="badge-pill text-[10px]">OPEN</span>
+            </td>
+            <td class="py-3.5 px-4 text-[var(--muted)]"
+                th:text="${c.createdAt != null ? #temporals.format(c.createdAt, 'dd MMM yyyy, HH:mm') : '—'}">08 Oct 2026</td>
+            <td class="py-3.5 px-4 sm:px-6 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a th:href="'/admin/reports/detail?id=' + ${c.caseId}"
+                   class="btn-secondary text-xs py-1 px-2.5">Details</a>
+                <th:block th:if="${c.caseStatus.name() == 'OPEN'}">
+                  <form method="post" action="/admin/reports/review" class="inline">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="caseId" th:value="${c.caseId}"/>
+                    <input type="hidden" name="status" value="CONFIRMED_FRAUD"/>
+                    <button type="submit" class="text-[11px] font-bold text-[var(--accent)] hover:underline px-1">✓Fraud</button>
+                  </form>
+                  <form method="post" action="/admin/reports/review" class="inline">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="caseId" th:value="${c.caseId}"/>
+                    <input type="hidden" name="status" value="FALSE_POSITIVE"/>
+                    <button type="submit" class="text-[11px] font-bold text-[var(--positive)] hover:underline px-1">✗FP</button>
+                  </form>
+                </th:block>
+              </div>
+            </td>
+          </tr>
+
+          <tr th:if="${#lists.isEmpty(cases)}">
+            <td colspan="8" class="py-12 text-center text-xs text-[var(--muted)]">
+              <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+              <p class="font-semibold text-[var(--ink)]">No cases match your filter criteria</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div th:if="${totalPages > 1}" class="p-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">
+      <p>Page <span th:text="${currentPage}">1</span> of <span th:text="${totalPages}">1</span></p>
+      <div class="flex items-center gap-2">
+        <a th:href="@{/admin/reports(page=${currentPage - 1}, status=${status}, sort=${sort}, dir=${dir}, search=${search})}"
+           th:class="${currentPage == 1} ? 'pointer-events-none opacity-30 btn-secondary py-1 px-3' : 'btn-secondary py-1 px-3'">
+          ← Prev
+        </a>
+        <a th:href="@{/admin/reports(page=${currentPage + 1}, status=${status}, sort=${sort}, dir=${dir}, search=${search})}"
+           th:class="${currentPage == totalPages} ? 'pointer-events-none opacity-30 btn-secondary py-1 px-3' : 'btn-secondary py-1 px-3'">
+          Next →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</th:block>
+</body>
+</html>

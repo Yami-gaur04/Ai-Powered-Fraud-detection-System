@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account — FraudShield</title>
+  <meta name="description" content="Register for FraudShield AI-Powered Fraud Detection"/>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --bg: #FBFAF7;
+      --surface: #FFFFFF;
+      --surface-subtle: #F6F5F0;
+      --border: #E8E6E1;
+      --ink: #17181C;
+      --muted: #6B6B70;
+      --label: #8A8A90;
+      --accent: #C0302B;
+      --accent-soft: rgba(192, 48, 43, 0.08);
+      --positive: #1E7B3A;
+      --positive-soft: rgba(30, 123, 58, 0.08);
+    }
+    body.dark-mode {
+      --bg: #121214;
+      --surface: #18181C;
+      --surface-subtle: #202026;
+      --border: #2A2A30;
+      --ink: #F0F0F3;
+      --muted: #8E8E98;
+      --label: #72727C;
+      --accent: #E04D47;
+      --accent-soft: rgba(224, 77, 71, 0.15);
+      --positive: #2BB356;
+      --positive-soft: rgba(43, 179, 86, 0.15);
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+    }
+    .fs-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors">
+
+  <!-- Top bar with brand & theme toggle -->
+  <div class="w-full max-w-md flex items-center justify-between mb-8">
+    <a href="/login" class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white shadow-sm">
+        <i data-lucide="shield-check" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <span class="font-bold text-base tracking-tight text-[var(--ink)]">FraudShield</span>
+        <span class="block text-[10px] font-semibold text-[var(--label)] uppercase tracking-wider">AI Security</span>
+      </div>
+    </a>
+    <button onclick="toggleTheme()" class="p-2 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-subtle)] border border-[var(--border)] transition">
+      <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- Register Card -->
+  <div class="w-full max-w-md fs-card p-6 sm:p-8">
+    <div class="mb-6">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--label)]">Create Account</span>
+      <h1 class="text-2xl font-bold text-[var(--ink)] tracking-tight mt-1">Join FraudShield</h1>
+      <p class="text-xs text-[var(--muted)] mt-1">Get instant AI-backed protection for all your transactions</p>
+    </div>
+
+    <!-- Flash Alerts -->
+    <div th:if="${error}" class="p-3.5 rounded-xl border border-red-200 bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-medium flex items-center gap-2.5 mb-5">
+      <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span th:text="${error}">An error occurred</span>
+    </div>
+    <div th:if="${success}" class="p-3.5 rounded-xl border border-emerald-200 bg-[var(--positive-soft)] text-[var(--positive)] text-xs font-medium flex items-center gap-2.5 mb-5">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+      <span th:text="${success}">Success</span>
+    </div>
+
+    <form method="post" th:action="@{/register}" class="space-y-4" id="register-form">
+
+      <div>
+        <label for="name" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Full Name *</label>
+        <div class="relative">
+          <i data-lucide="user" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="text" id="name" name="name" required autocomplete="name"
+                 placeholder="e.g. Alex Morgan"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+        </div>
+      </div>
+
+      <div>
+        <label for="email" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Email Address *</label>
+        <div class="relative">
+          <i data-lucide="mail" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="email" id="email" name="email" required autocomplete="email"
+                 placeholder="alex@company.com"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+        </div>
+      </div>
+
+      <div>
+        <label for="reg-password" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Password *</label>
+        <div class="relative">
+          <i data-lucide="lock" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="password" id="reg-password" name="password" required minlength="8" autocomplete="new-password"
+                 placeholder="Min 8 characters"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+        </div>
+        <!-- Strength indicator -->
+        <div class="mt-2 flex items-center gap-2">
+          <div class="flex-1 h-1.5 bg-[var(--surface-subtle)] border border-[var(--border)] rounded-full overflow-hidden">
+            <div id="pwd-strength-bar" class="h-full rounded-full transition-all duration-300" style="width: 0%; background-color: var(--accent);"></div>
+          </div>
+          <span id="pwd-strength-label" class="text-[10px] font-semibold text-[var(--label)] uppercase">Too Short</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="confirm-password" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Confirm Password *</label>
+        <div class="relative">
+          <i data-lucide="lock-keyhole" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="password" id="confirm-password" name="confirmPassword" required autocomplete="new-password"
+                 placeholder="Re-enter your password"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] transition"/>
+        </div>
+        <p id="match-msg" class="text-[11px] mt-1 hidden"></p>
+      </div>
+
+      <button type="submit" id="reg-submit-btn"
+              class="w-full bg-[var(--ink)] text-[var(--bg)] font-semibold py-2.5 rounded-full text-sm hover:opacity-90 transition flex items-center justify-center gap-2 mt-2 shadow-sm">
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+        <span>Create Account</span>
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-[var(--muted)] mt-6">
+      Already have an account?
+      <a href="/login" class="font-semibold text-[var(--accent)] hover:underline ml-1">Sign in here</a>
+    </p>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const pwdInp = document.getElementById('reg-password');
+    const confirmInp = document.getElementById('confirm-password');
+    const strengthBar = document.getElementById('pwd-strength-bar');
+    const strengthLabel = document.getElementById('pwd-strength-label');
+    const matchMsg = document.getElementById('match-msg');
+
+    pwdInp.addEventListener('input', () => {
+      const v = pwdInp.value;
+      let score = 0;
+      if (v.length >= 8) score++;
+      if (/[A-Z]/.test(v)) score++;
+      if (/[0-9]/.test(v)) score++;
+      if (/[^A-Za-z0-9]/.test(v)) score++;
+
+      const pcts = [0, 25, 50, 75, 100];
+      const labels = ['Too Short', 'Weak', 'Fair', 'Good', 'Strong'];
+      const colors = ['#C0302B', '#C0302B', '#D98A00', '#2F6FB5', '#1E7B3A'];
+
+      strengthBar.style.width = pcts[score] + '%';
+      strengthBar.style.backgroundColor = colors[score];
+      strengthLabel.textContent = labels[score];
+      strengthLabel.style.color = colors[score];
+    });
+
+    confirmInp.addEventListener('input', () => {
+      if (!confirmInp.value) {
+        matchMsg.classList.add('hidden');
+        return;
+      }
+      matchMsg.classList.remove('hidden');
+      if (confirmInp.value === pwdInp.value) {
+        matchMsg.textContent = '✓ Passwords match';
+        matchMsg.style.color = 'var(--positive)';
+      } else {
+        matchMsg.textContent = '✕ Passwords do not match';
+        matchMsg.style.color = 'var(--accent)';
+      }
+    });
+
+    // Theme toggle
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('fs_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    if (localStorage.getItem('fs_theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      updateThemeIcon(true);
+    }
+  </script>
+</body>
+</html>

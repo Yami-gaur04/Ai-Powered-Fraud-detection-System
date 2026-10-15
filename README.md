@@ -67,45 +67,61 @@ An enterprise-grade fraud detection, security intelligence, and financial safety
 
 ## 🚀 Quick Start & How to Run
 
+### Project Directory Structure
+```text
+Ai-Powered-Fraud-detection-System/
+├── backend/                  # Spring Boot 3 Java 17 backend & embedded services
+│   ├── src/                  # Controllers, Services, DAOs, Rules, Threads & Templates
+│   ├── pom.xml               # Maven configuration
+│   ├── mvnw.cmd              # Maven wrapper
+│   └── .mvn_bin/             # Embedded Maven binary distribution
+├── frontend/                 # Standalone React + Vite client application
+│   ├── src/                  # React components, pages, hooks, charts & contexts
+│   ├── package.json          # Frontend scripts & dependencies
+│   └── vite.config.js        # Vite build & dev-server configuration
+├── data/                     # Persistent H2 database store
+└── README.md                 # System documentation
+```
+
 ### Prerequisites
 - Java 17+
-- Maven 3.9+ (or use included `mvnw.cmd` / `./mvnw`)
+- Maven 3.9+ (or use backend Maven wrapper `backend\mvnw.cmd`)
+- Node.js 18+ (for frontend)
 
-### Running Locally
-1. Start the Spring Boot server:
+---
+
+### Running the Backend (Spring Boot Server)
+1. Navigate to the `backend/` directory or run from root:
    ```bash
+   cd backend
    .\mvnw.cmd spring-boot:run
    ```
-2. Open your browser and navigate to:
+2. The backend server starts at:
    [http://localhost:8080](http://localhost:8080)
+   - Exposes REST APIs at `/api/**` with CORS enabled for frontend clients
+   - Serves the integrated web experience at `/dashboard`
+   - Interactive H2 Database Console at [http://localhost:8080/h2-console](http://localhost:8080/h2-console) (JDBC URL: `jdbc:h2:file:./data/frauddb`, User: `sa`, Password: empty)
 
-3. (Optional) Access the H2 Database Console:
-   - URL: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
-   - JDBC URL: `jdbc:h2:file:./data/frauddb`
-   - User Name: `sa`
-   - Password: *(leave blank)*
+3. Run Automated Backend Tests:
+   ```bash
+   cd backend
+   .\mvnw.cmd test
+   ```
+   All 14 tests across rules, raw JDBC DAOs, service layer, and multithreading concurrency execute cleanly with **0 failures and 0 errors**.
 
-### Running Automated Test Suite
-To execute the comprehensive unit and integration test suite:
-```bash
-.\mvnw.cmd test
-```
-All 14 tests across rules, raw JDBC DAOs, service layer, and multithreading concurrency execute cleanly with **0 failures and 0 errors**.
+---
 
-### Running Dev-Only UI Overflow Detector
-To inspect all User and Admin pages across responsive viewports (`390px`, `768px`, `1280px`, `1440px`, `1920px`, `2560px`) for document scroll, card boundary overflows, and button label wrapping:
-```bash
-# Using npm
-npm run ui-overflow-check
-
-# Or directly with Node / scripts:
-node scripts/ui-overflow-check.js
-# On Windows:
-.\scripts\ui-overflow-check.cmd
-# On Linux/macOS:
-./scripts/ui-overflow-check
-```
-Ensures 0 horizontal scrollbars, 0 card overflows, and strictly single-line button labels across all breakpoints.
+### Running the Frontend (React + Vite Client)
+1. Navigate to the `frontend/` directory:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+2. Open the frontend in your browser:
+   [http://localhost:5173](http://localhost:5173)
+   - Automatically connects to the backend API at `http://localhost:8080/api`
+   - Real-time JWT authentication, transaction monitoring, and case investigation screens
 
 ---
 

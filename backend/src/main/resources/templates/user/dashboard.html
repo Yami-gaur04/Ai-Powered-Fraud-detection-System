@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head>
+  <title th:text="${pageTitle} + ' — FraudShield'">Client Dashboard — FraudShield</title>
+</head>
+<body>
+<th:block th:fragment="content">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: OVERVIEW (Health Ring + KPI Strip + Chart + Recent Activity)          -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-panel-overview" class="tab-panel space-y-8" th:classappend="${activeTab == 'overview' or activeTab == null} ? '' : 'hidden'">
+
+    <!-- 1. Editorial Hero Strip: Headline, Account Health Ring, Quick Actions -->
+    <div class="fs-card p-6 sm:p-8">
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
+
+        <!-- Left: Plain headline and dynamic security statement -->
+        <div class="xl:col-span-7 space-y-3 min-w-0">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span class="fs-eyebrow">Real-Time Protection Status</span>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--positive)] bg-[var(--positive-soft)] px-3 py-1 rounded-full border border-emerald-500/20 whitespace-nowrap flex-shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--positive)] animate-pulse"></span>
+              Live Monitoring
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--ink)] leading-tight hero-headline" th:text="${headline}">
+            Your account looks safe. No suspicious activity detected.
+          </h2>
+          <p class="text-sm sm:text-base text-[var(--muted)] leading-relaxed body-paragraph" th:text="${insightCallout}">
+            100% of your transactions this month matched your normal spending profile.
+          </p>
+        </div>
+
+        <!-- Right: Account Health Gauge (88px) & Quick Buttons -->
+        <div class="xl:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-start xl:justify-end gap-5 border-t xl:border-t-0 border-[var(--border)] pt-5 xl:pt-0 min-w-0">
+
+          <!-- Account Health Ring Gauge (88px) -->
+          <div class="flex items-center gap-4 bg-[var(--surface-subtle)] p-3.5 px-5 rounded-2xl border border-[var(--border)] flex-shrink-0">
+            <div class="relative w-[88px] h-[88px] flex items-center justify-center flex-shrink-0">
+              <svg class="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 36 36">
+                <path class="text-[var(--border)]" stroke-width="3.5" stroke="currentColor" fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="text-[var(--positive)]" stroke-width="3.5" stroke-dasharray="100, 100"
+                      th:attr="stroke-dasharray=${safetyScore} + ', 100'"
+                      stroke-linecap="round" stroke="currentColor" fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center flex-col">
+                <span class="text-base font-bold font-mono text-[var(--ink)] leading-none" th:text="${safetyScore} + '%'">96%</span>
+              </div>
+            </div>
+            <div class="min-w-0">
+              <span class="fs-eyebrow block">Safety Score</span>
+              <span class="text-sm font-bold text-[var(--positive)] whitespace-nowrap">Optimal Status</span>
+            </div>
+          </div>
+
+          <!-- Quick actions buttons (Wrapping row, nowrap text) -->
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <button onclick="openNewTxModal()" class="btn-primary text-sm py-2.5 px-5 justify-center flex-1 sm:flex-initial whitespace-nowrap flex-shrink-0">
+              <i data-lucide="plus" class="w-4 h-4 flex-shrink-0"></i>
+              <span>Simulate Transaction</span>
+            </button>
+            <button onclick="openAiModal()" class="btn-secondary text-sm py-2.5 px-5 justify-center flex-1 sm:flex-initial whitespace-nowrap flex-shrink-0">
+              <i data-lucide="sparkles" class="w-4 h-4 text-[var(--accent)] flex-shrink-0"></i>
+              <span>Ask AI Helper</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. KPI STRIP (4 Pillars across fluid width, Container Query Number Sizing) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <!-- 1. Total Transactions -->
+      <div class="fs-kpi-strip flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <span class="fs-eyebrow truncate" title="Total Transactions">Total Transactions</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)] flex-shrink-0">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="fs-kpi-val" th:text="${#numbers.formatInteger(totalTx, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 flex items-center gap-1.5 truncate">
+            <span class="text-[var(--positive)] font-semibold">100% processed</span>
+            <span>via AI Shield</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Total Volume Spent (BUG 1 FIX: Dropped .00 decimals, Container Query sized, tooltip with exact) -->
+      <div class="fs-kpi-strip flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <span class="fs-eyebrow truncate" title="Total Volume Spent">Total Volume Spent</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--muted)] flex-shrink-0">
+            <i data-lucide="banknote" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="fs-kpi-val"
+               th:title="'Exact: ₹' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}"
+               th:attr="aria-label='Total spent ₹' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}">
+            <span class="unit-suffix">₹</span><span th:text="${#numbers.formatInteger(totalSpent, 1, 'COMMA')}">0</span>
+          </div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate" title="Approved spending volume">Approved spending volume</p>
+        </div>
+      </div>
+
+      <!-- 3. Flagged & Holds -->
+      <div class="fs-kpi-strip flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <span class="fs-eyebrow truncate" title="Flagged & Holds">Flagged & Holds</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="fs-kpi-val text-[var(--accent)]" th:text="${#numbers.formatInteger(flaggedCount, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate" th:if="${openAlertsCount > 0}">
+            <span class="text-[var(--accent)] font-semibold" th:text="${openAlertsCount} + ' require verification'">1 requires verification</span>
+          </p>
+          <p class="text-xs sm:text-sm text-[var(--positive)] mt-1.5 font-medium truncate" th:unless="${openAlertsCount > 0}">
+            All historical holds resolved
+          </p>
+        </div>
+      </div>
+
+      <!-- 4. Safe Transactions -->
+      <div class="fs-kpi-strip flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <span class="fs-eyebrow truncate" title="Verified Safe">Verified Safe</span>
+          <div class="w-10 h-10 rounded-xl bg-[var(--positive-soft)] flex items-center justify-center text-[var(--positive)] flex-shrink-0">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="fs-kpi-val text-[var(--positive)]" th:text="${#numbers.formatInteger(safeTxCount, 1, 'COMMA')}">0</div>
+          <p class="text-xs sm:text-sm text-[var(--muted)] mt-1.5 truncate">Legitimate transactions cleared</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MAIN CHART CARD: "Spending vs flagged, day by day" -->
+    <div class="fs-card p-6 sm:p-7">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)] mb-4">
+        <div>
+          <span class="fs-eyebrow">Spending vs Flagged Trend</span>
+          <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Daily Volume & Risk Distribution</h3>
+        </div>
+
+        <!-- Range Buttons & Download Action -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-[var(--surface-subtle)] p-1 rounded-full border border-[var(--border)]">
+            <button onclick="loadUserTrendChart(7)" id="range-btn-7" class="text-xs font-semibold px-3 py-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] transition">7D</button>
+            <button onclick="loadUserTrendChart(30)" id="range-btn-30" class="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--ink)] shadow-sm">30D</button>
+            <button onclick="loadUserTrendChart(90)" id="range-btn-90" class="text-xs font-semibold px-3 py-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] transition">90D</button>
+          </div>
+          <button onclick="downloadChartAsPng('userTrendChart', 'personal-spending-trend')"
+                  class="btn-chart-action"
+                  title="Download PNG (High-Res 2x)"
+                  aria-label="Download Spending Trend chart as PNG">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chart Canvas Container -->
+      <div class="chart-box">
+        <canvas id="userTrendChart" aria-label="Personal daily spending and flagged trend chart" role="img"></canvas>
+      </div>
+    </div>
+
+    <!-- 4. 2-COLUMN BOTTOM: Recent Activity + Actionable Holds -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left 7 cols: Recent Activity Table -->
+      <div class="lg:col-span-7 fs-card p-6 sm:p-7">
+        <div class="flex items-center justify-between pb-3.5 border-b border-[var(--border)] mb-4">
+          <div>
+            <span class="fs-eyebrow">Recent Activity</span>
+            <h4 class="text-base font-bold text-[var(--ink)] mt-0.5">Latest Transactions</h4>
+          </div>
+          <button onclick="switchPage('transactions')" class="text-sm text-[var(--accent)] font-semibold hover:underline flex items-center gap-1">
+            <span>View all</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="divide-y divide-[var(--border-subtle)]">
+          <div th:each="tx : ${recentActivity}"
+               th:onclick="openTxDrawer({id: [[${tx.id}]], merchant: [[${tx.merchant}]], amount: [[${tx.amount}]], date: [[${tx.transactionTime}]], location: [[${tx.location}]], method: [[${tx.paymentMethod}]], deviceId: [[${tx.deviceId}]], fraudScore: [[${tx.fraudScore}]], status: [[${tx.status.name()}]], reason: 'Standard pattern assessment'})"
+               class="py-3.5 flex items-center justify-between hover:bg-[var(--surface-subtle)] px-2.5 rounded-xl cursor-pointer transition">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] flex items-center justify-center flex-shrink-0">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-[var(--muted)]"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-[var(--ink)] truncate" th:text="${tx.merchant}">Merchant</p>
+                <p class="text-xs text-[var(--muted)] truncate mt-0.5">
+                  <span th:text="${tx.transactionTime != null ? #temporals.format(tx.transactionTime, 'dd MMM, HH:mm') : 'Recent'}">Today</span>
+                  <span>·</span>
+                  <span th:text="${tx.location}">Mumbai</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="text-right flex-shrink-0 ml-3">
+              <p class="text-sm font-bold font-mono text-[var(--ink)]">₹<span th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></p>
+              <span th:text="${tx.status}"
+                    th:classappend="${tx.status.name() == 'APPROVED'} ? 'badge-approved' : (${tx.status.name() == 'FLAGGED'} ? 'badge-flagged' : 'badge-blocked')"
+                    class="badge-pill mt-1 text-[11px]">APPROVED</span>
+            </div>
+          </div>
+
+          <div th:if="${#lists.isEmpty(recentActivity)}" class="py-8 text-center text-sm text-[var(--muted)]">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+            <p>No transactions found. Simulate one using the button above.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 5 cols: Actionable Holds & Verification -->
+      <div class="lg:col-span-5 fs-card p-6 sm:p-7">
+        <div class="flex items-center justify-between pb-3.5 border-b border-[var(--border)] mb-4">
+          <div>
+            <span class="fs-eyebrow">Action Required</span>
+            <h4 class="text-base font-bold text-[var(--ink)] mt-0.5">Verification Holds</h4>
+          </div>
+          <span th:if="${openAlertsCount > 0}" class="badge-pill badge-flagged text-xs" th:text="${openAlertsCount} + ' PENDING'">1 PENDING</span>
+        </div>
+
+        <div class="space-y-3.5">
+          <div th:each="alert : ${alerts}" th:if="${alert.caseStatus.name() == 'OPEN'}"
+               class="p-4 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning-soft)] space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-sm font-bold text-[var(--ink)]">₹<span th:text="${#numbers.formatDecimal(alert.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span> — <span th:text="${alert.merchant}">Store</span></p>
+                <p class="text-xs text-[var(--muted)] mt-1" th:text="${alert.reason}">Unusual amount detected</p>
+              </div>
+              <span class="badge-pill badge-flagged text-[11px]">HELD</span>
+            </div>
+
+            <!-- Inline Dual Action Buttons -->
+            <div class="flex gap-2 pt-1">
+              <form method="post" action="/dashboard/transactions/confirm" class="flex-1">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="transactionId" th:value="${alert.transactionId}"/>
+                <input type="hidden" name="returnTab" value="overview"/>
+                <button type="submit" class="w-full btn-secondary text-xs py-2 justify-center hover:border-[var(--positive)] hover:text-[var(--positive)]">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-[var(--positive)]"></i>
+                  <span>This was me</span>
+                </button>
+              </form>
+
+              <form method="post" action="/dashboard/transactions/report" class="flex-1">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="transactionId" th:value="${alert.transactionId}"/>
+                <input type="hidden" name="returnTab" value="overview"/>
+                <button type="submit" class="w-full btn-secondary text-xs py-2 justify-center hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
+                  <span>This wasn't me</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div th:if="${openAlertsCount == 0}" class="py-8 text-center text-sm text-[var(--muted)] space-y-2">
+            <div class="w-11 h-11 rounded-full bg-[var(--positive-soft)] text-[var(--positive)] mx-auto flex items-center justify-center">
+              <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <p class="font-bold text-[var(--ink)]">All clear!</p>
+            <p class="text-xs text-[var(--muted)]">No active verification holds or security flags on your account.</p>
+          </div>
+        </div>
+
+        <!-- Quick Tips Callout -->
+        <div class="mt-4 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] text-xs text-[var(--muted)] flex items-start gap-2.5">
+          <i data-lucide="info" class="w-4 h-4 text-[var(--secondary)] flex-shrink-0 mt-0.5"></i>
+          <p class="leading-relaxed text-xs">
+            Confirming legitimate transactions trains the machine learning engine to recognize your authorized devices and spending locations.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: TRANSACTIONS (Searchable Table + Drawer trigger + CSV export)         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-panel-transactions" class="tab-panel space-y-6" th:classappend="${activeTab == 'transactions'} ? '' : 'hidden'">
+
+    <!-- Search & Filter Bar -->
+    <div class="fs-card p-5 sm:p-6">
+      <form method="get" action="/dashboard/transactions" class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <input type="hidden" name="tab" value="transactions"/>
+
+        <!-- Search input -->
+        <div class="relative flex-1">
+          <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]"></i>
+          <input type="text" name="search" th:value="${search}" placeholder="Search by merchant, city, or transaction ID…"
+                 class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-full py-2.5 pl-11 pr-4 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+        </div>
+
+        <!-- Status Filter Dropdown & Export -->
+        <div class="flex items-center gap-3">
+          <select name="status" onchange="this.form.submit()"
+                  class="bg-[var(--surface-subtle)] border border-[var(--border)] rounded-full py-2.5 px-4 text-xs font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]">
+            <option value="ALL" th:selected="${status == null or status == 'ALL'}">All Statuses</option>
+            <option value="APPROVED" th:selected="${status == 'APPROVED'}">Approved Only</option>
+            <option value="FLAGGED" th:selected="${status == 'FLAGGED'}">Flagged / Held</option>
+            <option value="BLOCKED" th:selected="${status == 'BLOCKED'}">Blocked Only</option>
+          </select>
+
+          <button type="submit" class="btn-primary text-xs py-2 px-4">Filter</button>
+
+          <a href="/dashboard/export?format=csv" class="btn-secondary text-xs py-2 px-3.5 inline-flex items-center gap-1.5" title="Export CSV">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Transactions Full Table (Row height >= 52px, text 14-15px) -->
+    <div class="fs-card overflow-hidden p-0">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[var(--surface-subtle)] border-b border-[var(--border)]">
+            <tr>
+              <th class="py-4 px-5 sm:px-6">Transaction ID</th>
+              <th class="py-4 px-4">Merchant & Location</th>
+              <th class="py-4 px-4">Date & Time</th>
+              <th class="py-4 px-4">Amount (INR)</th>
+              <th class="py-4 px-4">Method / Device</th>
+              <th class="py-4 px-4">AI Risk Score</th>
+              <th class="py-4 px-4">Status</th>
+              <th class="py-4 px-5 sm:px-6 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr th:each="t : ${filteredTransactions}" class="hover:bg-[var(--surface-subtle)] transition h-[52px]">
+              <td class="py-4 px-5 sm:px-6 font-mono font-bold text-[var(--ink)]" th:text="'#' + ${t.id}">#101</td>
+              <td class="py-4 px-4">
+                <p class="font-bold text-[var(--ink)]" th:text="${t.merchant}">Amazon India</p>
+                <p class="text-xs text-[var(--muted)] flex items-center gap-1 mt-0.5">
+                  <i data-lucide="map-pin" class="w-3 h-3"></i>
+                  <span th:text="${t.location}">Mumbai</span>
+                </p>
+              </td>
+              <td class="py-4 px-4 text-xs text-[var(--muted)]" th:text="${t.transactionTime != null ? #temporals.format(t.transactionTime, 'dd MMM yyyy, HH:mm') : '—'}">01 Oct 2026</td>
+              <td class="py-4 px-4 font-mono font-bold text-[var(--ink)]">₹<span th:text="${#numbers.formatDecimal(t.amount, 1, 'COMMA', 2, 'POINT')}">1,499.00</span></td>
+              <td class="py-4 px-4">
+                <span class="font-mono text-xs text-[var(--ink)]" th:text="${t.paymentMethod}">UPI</span>
+                <span class="block text-[11px] font-mono text-[var(--muted)] truncate max-w-[120px]" th:text="${t.deviceId}">dev-phone</span>
+              </td>
+              <td class="py-4 px-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-14 thin-progress-track">
+                    <div class="thin-progress-bar"
+                         th:style="'width:' + ${#numbers.formatDecimal(t.fraudScore * 100, 0, 0)} + '%; background-color:' + (${t.fraudScore >= 0.75} ? 'var(--accent)' : (${t.fraudScore >= 0.4} ? 'var(--warning)' : 'var(--positive)'))"></div>
+                  </div>
+                  <span class="font-mono font-bold text-xs text-[var(--ink)]" th:text="${#numbers.formatDecimal(t.fraudScore * 100, 0, 0)} + '%'">12%</span>
+                </div>
+              </td>
+              <td class="py-4 px-4">
+                <span th:text="${t.status}"
+                      th:classappend="${t.status.name() == 'APPROVED'} ? 'badge-approved' : (${t.status.name() == 'FLAGGED'} ? 'badge-flagged' : 'badge-blocked')"
+                      class="badge-pill text-xs">APPROVED</span>
+              </td>
+              <td class="py-4 px-5 sm:px-6 text-right">
+                <button type="button"
+                        th:onclick="openTxDrawer({id: [[${t.id}]], merchant: [[${t.merchant}]], amount: [[${t.amount}]], date: [[${t.transactionTime}]], location: [[${t.location}]], method: [[${t.paymentMethod}]], deviceId: [[${t.deviceId}]], fraudScore: [[${t.fraudScore}]], status: [[${t.status.name()}]], reason: 'Risk evaluated by rules engine'})"
+                        class="btn-secondary text-xs py-1.5 px-3.5">
+                  <span>Details</span>
+                </button>
+              </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(filteredTransactions)}">
+              <td colspan="8" class="py-12 text-center text-sm text-[var(--muted)]">
+                <i data-lucide="inbox" class="w-9 h-9 mx-auto mb-2 opacity-30"></i>
+                <p class="font-semibold text-base text-[var(--ink)]">No transactions match your search filter</p>
+                <a href="/dashboard/transactions" class="text-sm text-[var(--accent)] hover:underline mt-1.5 inline-block font-semibold">Clear filters</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 3: ALERTS & HOLDS (Feed with confirm / dispute actions)                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-panel-alerts" class="tab-panel space-y-6" th:classappend="${activeTab == 'alerts'} ? '' : 'hidden'">
+
+    <!-- Summary strip -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="fs-card p-5 flex items-center justify-between">
+        <div>
+          <span class="fs-eyebrow">Active Review Holds</span>
+          <p class="text-3xl font-bold text-[var(--ink)] mt-1" th:text="${openAlertsCount}">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
+          <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="fs-card p-5 flex items-center justify-between">
+        <div>
+          <span class="fs-eyebrow">Confirmed Fraud (Blocked)</span>
+          <p class="text-3xl font-bold text-[var(--negative)] mt-1" th:text="${confirmedAlerts}">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-[var(--negative-soft)] flex items-center justify-center text-[var(--negative)]">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="fs-card p-5 flex items-center justify-between">
+        <div>
+          <span class="fs-eyebrow">Cleared Holds (Safe)</span>
+          <p class="text-3xl font-bold text-[var(--positive)] mt-1" th:text="${clearedAlerts}">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-[var(--positive-soft)] flex items-center justify-center text-[var(--positive)]">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert List Feed -->
+    <div class="fs-card p-6 sm:p-7 space-y-4">
+      <div class="flex items-center justify-between pb-3.5 border-b border-[var(--border)]">
+        <div>
+          <span class="fs-eyebrow">Security Intelligence</span>
+          <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Real-Time Risk Alerts & Investigations</h3>
+        </div>
+        <span class="text-xs text-[var(--muted)] font-mono">Live Ingestion</span>
+      </div>
+
+      <div class="space-y-4">
+        <div th:each="alert : ${alerts}" class="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface-subtle)] space-y-3.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+                   th:classappend="${alert.caseStatus.name() == 'OPEN'} ? 'bg-[var(--warning-soft)] text-[var(--warning)]' : (${alert.caseStatus.name() == 'CONFIRMED_FRAUD'} ? 'bg-[var(--negative-soft)] text-[var(--negative)]' : 'bg-[var(--positive-soft)] text-[var(--positive)]')">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <p class="text-base font-bold text-[var(--ink)]" th:text="'Case #' + ${alert.caseId} + ' — ₹' + ${#numbers.formatDecimal(alert.amount, 1, 'COMMA', 2, 'POINT')} + ' at ' + ${alert.merchant}">Case #101</p>
+                <p class="text-xs text-[var(--muted)]" th:text="'Transaction #' + ${alert.transactionId} + ' · ' + ${alert.location}">Tx Details</p>
+              </div>
+            </div>
+
+            <span th:text="${alert.caseStatus}"
+                  th:classappend="${alert.caseStatus.name() == 'OPEN'} ? 'badge-open' : (${alert.caseStatus.name() == 'CONFIRMED_FRAUD'} ? 'badge-confirmed' : 'badge-fp')"
+                  class="badge-pill self-start sm:self-auto text-xs">OPEN</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--ink)] flex items-start gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-[var(--accent)] flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-semibold text-xs text-[var(--ink)]">Detection Reason:</p>
+              <p class="text-xs text-[var(--muted)] mt-0.5" th:text="${alert.reason}">Reason</p>
+            </div>
+          </div>
+
+          <!-- Dispute Actions for OPEN items -->
+          <div th:if="${alert.caseStatus.name() == 'OPEN'}" class="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <form method="post" action="/dashboard/transactions/confirm" class="flex-1">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <input type="hidden" name="transactionId" th:value="${alert.transactionId}"/>
+              <input type="hidden" name="returnTab" value="alerts"/>
+              <button type="submit" class="w-full btn-secondary text-xs py-2 justify-center hover:border-[var(--positive)] hover:text-[var(--positive)]">
+                <i data-lucide="check" class="w-3.5 h-3.5 text-[var(--positive)]"></i>
+                <span>Confirm: This was me</span>
+              </button>
+            </form>
+
+            <form method="post" action="/dashboard/transactions/report" class="flex-1">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <input type="hidden" name="transactionId" th:value="${alert.transactionId}"/>
+              <input type="hidden" name="returnTab" value="alerts"/>
+              <button type="submit" class="w-full btn-secondary text-xs py-2 justify-center hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
+                <span>Dispute: This wasn't me</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(alerts)}" class="py-12 text-center text-sm text-[var(--muted)]">
+          <i data-lucide="shield-check" class="w-10 h-10 mx-auto mb-2 text-[var(--positive)] opacity-60"></i>
+          <p class="font-bold text-base text-[var(--ink)]">No security alerts on record</p>
+          <p class="text-xs text-[var(--muted)] mt-1">Your payments profile is in good standing with zero active fraud cases.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 4: SECURITY (Devices, Login History, 2FA, Thresholds)                   -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-panel-security" class="tab-panel space-y-6" th:classappend="${activeTab == 'security'} ? '' : 'hidden'">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- 1. Security Settings Form (2FA, Daily Limit, Threshold) -->
+      <div class="fs-card p-6 sm:p-7 space-y-5">
+        <div class="pb-3 border-b border-[var(--border)]">
+          <span class="fs-eyebrow">Protection Controls</span>
+          <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Account Security Configuration</h3>
+        </div>
+
+        <form method="post" action="/dashboard/security/update" class="space-y-5">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <!-- 2FA Toggle -->
+          <div class="flex items-center justify-between p-4 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border)]">
+            <div>
+              <p class="text-sm font-bold text-[var(--ink)]">Two-Factor Authentication (2FA)</p>
+              <p class="text-xs text-[var(--muted)]">Require one-time verification passcode for suspicious actions</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="twoFactorEnabled" value="true" th:checked="${twoFactorEnabled}" class="sr-only peer"/>
+              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent)]"></div>
+            </label>
+          </div>
+
+          <!-- Daily Spending Limit -->
+          <div>
+            <label for="dailyLimit" class="block text-xs font-semibold text-[var(--ink)] mb-1.5">Daily Spending Velocity Limit (INR)</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted)]">₹</span>
+              <input type="number" id="dailyLimit" name="dailyLimit" th:value="${dailyLimit}" step="1000" min="5000"
+                     class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 pl-8 pr-4 text-sm font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+            </div>
+            <p class="text-[11px] text-[var(--muted)] mt-1">Transactions exceeding this within 24 hours trigger real-time verification.</p>
+          </div>
+
+          <!-- Alert Sensitivity Slider -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label for="alertThreshold" class="text-xs font-semibold text-[var(--ink)]">AI Risk Alert Sensitivity</label>
+              <span id="slider-val-txt" class="font-mono text-xs font-bold text-[var(--accent)]" th:text="${alertThreshold * 100} + '%'">40%</span>
+            </div>
+            <input type="range" id="alertThreshold" name="alertThreshold" min="0.10" max="0.90" step="0.05" th:value="${alertThreshold}"
+                   oninput="document.getElementById('slider-val-txt').textContent = Math.round(this.value * 100) + '%'"
+                   class="w-full accent-[var(--accent)] cursor-pointer"/>
+            <div class="flex justify-between text-[11px] text-[var(--label)] mt-1 font-semibold uppercase">
+              <span>More Sensitive (10%)</span>
+              <span>Balanced (40%)</span>
+              <span>Less Sensitive (90%)</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary text-sm py-2.5 w-full justify-center">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Save Security Rules</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- 2. Trusted Devices & Activity -->
+      <div class="space-y-6">
+        <!-- Trusted Devices -->
+        <div class="fs-card p-6 sm:p-7 space-y-4">
+          <div class="pb-3 border-b border-[var(--border)]">
+            <span class="fs-eyebrow">Device Fingerprints</span>
+            <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Known & Authorized Devices</h3>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)]">
+                  <i data-lucide="laptop" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-[var(--ink)]">Windows 11 · Chrome 129</p>
+                  <p class="text-xs text-[var(--muted)]">Active Session · Mumbai, IN</p>
+                </div>
+              </div>
+              <span class="badge-pill badge-approved text-[10px]">CURRENT</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)]">
+                  <i data-lucide="smartphone" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-[var(--ink)]">iPhone 15 Pro · iOS App</p>
+                  <p class="text-xs text-[var(--muted)]">Last active 2 hours ago</p>
+                </div>
+              </div>
+              <span class="badge-pill badge-approved text-[10px]">TRUSTED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Log -->
+        <div class="fs-card p-6 sm:p-7 space-y-3">
+          <div class="pb-2.5 border-b border-[var(--border)]">
+            <span class="fs-eyebrow">Audit Log</span>
+            <h3 class="text-base font-bold text-[var(--ink)] mt-0.5">Recent Security Events</h3>
+          </div>
+          <div class="divide-y divide-[var(--border-subtle)] text-sm">
+            <div class="py-2.5 flex justify-between">
+              <span class="text-[var(--ink)] font-medium">Session login cleared</span>
+              <span class="text-[var(--muted)] text-xs">Today, 16:30</span>
+            </div>
+            <div class="py-2.5 flex justify-between">
+              <span class="text-[var(--ink)] font-medium">AI rule evaluation passed</span>
+              <span class="text-[var(--muted)] text-xs">Today, 14:15</span>
+            </div>
+            <div class="py-2.5 flex justify-between">
+              <span class="text-[var(--ink)] font-medium">Device fingerprint verified</span>
+              <span class="text-[var(--muted)] text-xs">Yesterday</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 5: SETTINGS & PROFILE (Profile, Password, Theme, CSV Export)            -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-panel-settings" class="tab-panel space-y-6" th:classappend="${activeTab == 'settings'} ? '' : 'hidden'">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Profile Form -->
+      <div class="fs-card p-6 sm:p-7 space-y-4">
+        <div class="pb-3 border-b border-[var(--border)]">
+          <span class="fs-eyebrow">Personal Details</span>
+          <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Profile Information</h3>
+        </div>
+
+        <form method="post" action="/dashboard/settings/profile" class="space-y-4">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div>
+            <label for="name" class="block text-xs font-semibold text-[var(--ink)] mb-1">Full Name</label>
+            <input type="text" id="name" name="name" th:value="${userName}" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <div>
+            <label for="settings-email" class="block text-xs font-semibold text-[var(--ink)] mb-1">Email (Read Only)</label>
+            <input type="email" id="settings-email" th:value="${userEmail}" readonly disabled
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--muted)] cursor-not-allowed"/>
+          </div>
+
+          <div>
+            <label for="phone" class="block text-xs font-semibold text-[var(--ink)] mb-1">Emergency Mobile / Alert SMS</label>
+            <input type="tel" id="phone" name="phone" th:value="${userPhone}" placeholder="+91 98765 43210"
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <button type="submit" class="btn-primary text-xs py-2.5 px-4">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Save Profile</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Change Password Form -->
+      <div class="fs-card p-6 sm:p-7 space-y-4">
+        <div class="pb-3 border-b border-[var(--border)]">
+          <span class="fs-eyebrow">Security Credentials</span>
+          <h3 class="text-lg font-bold text-[var(--ink)] mt-0.5">Change Password</h3>
+        </div>
+
+        <form method="post" action="/dashboard/settings/password" class="space-y-4">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div>
+            <label for="currentPassword" class="block text-xs font-semibold text-[var(--ink)] mb-1">Current Password *</label>
+            <input type="password" id="currentPassword" name="currentPassword" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <div>
+            <label for="newPassword" class="block text-xs font-semibold text-[var(--ink)] mb-1">New Password (Min 8 chars) *</label>
+            <input type="password" id="newPassword" name="newPassword" required minlength="8"
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <div>
+            <label for="confirmNewPassword" class="block text-xs font-semibold text-[var(--ink)] mb-1">Confirm New Password *</label>
+            <input type="password" id="confirmNewPassword" name="confirmPassword" required
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <button type="submit" class="btn-secondary text-xs py-2.5 px-4">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>Update Password</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Data Export Section -->
+    <div class="fs-card p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <h4 class="text-base font-bold text-[var(--ink)]">Export Audit Log & Transactions</h4>
+        <p class="text-xs sm:text-sm text-[var(--muted)] mt-1">Download a complete CSV spreadsheet containing your entire history and AI risk scores.</p>
+      </div>
+      <a href="/dashboard/export?format=csv" class="btn-primary text-xs py-2.5 px-4 flex-shrink-0">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        <span>Download .CSV</span>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- JAVASCRIPT: Chart.js Loader for Overview                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <script>
+    // Chart.js User Spending vs Flagged Trend Area Chart
+    let userChartInstance = null;
+    window.userChartInstance = null;
+
+    function loadUserTrendChart(days = 30) {
+      [7, 30, 90].forEach(d => {
+        const b = document.getElementById('range-btn-' + d);
+        if (b) {
+          if (d === days) {
+            b.className = 'text-xs font-semibold px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--ink)] shadow-sm';
+          } else {
+            b.className = 'text-xs font-semibold px-3 py-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] transition';
+          }
+        }
+      });
+
+      fetch('/api/charts/user-trend?days=' + days)
+        .then(r => r.json())
+        .then(data => {
+          renderUserChart(data);
+        })
+        .catch(() => {
+          const labels = ['Day 1','Day 5','Day 10','Day 15','Day 20','Day 25','Day 30'];
+          const spent = [1200, 3400, 800, 4500, 15000, 2200, 5400];
+          const flagged = [0, 0, 0, 4500, 0, 0, 0];
+          renderUserChart({ labels, spending: spent, flagged });
+        });
+    }
+
+    window.renderUserChart = function(chartData) {
+      const ctx = document.getElementById('userTrendChart');
+      if (!ctx) return;
+
+      if (!chartData) {
+        loadUserTrendChart(30);
+        return;
+      }
+
+      if (userChartInstance) {
+        userChartInstance.destroy();
+      }
+
+      const isDark = document.body.classList.contains('dark-mode');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+      const textColor = isDark ? '#8E8E98' : '#6B6B70';
+
+      userChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels || [],
+          datasets: [
+            {
+              label: 'Daily Spending (₹)',
+              data: chartData.spending || [],
+              borderColor: isDark ? '#F0F0F3' : '#17181C',
+              backgroundColor: isDark ? 'rgba(240, 240, 243, 0.08)' : 'rgba(23, 24, 28, 0.04)',
+              borderWidth: 2.5,
+              borderCapStyle: 'round',
+              borderJoinStyle: 'round',
+              tension: 0.35,
+              fill: true,
+              pointRadius: ctx => (ctx.dataIndex === (ctx.dataset.data ? ctx.dataset.data.length - 1 : 0) ? 4 : 0),
+              pointHoverRadius: 6,
+              pointBackgroundColor: isDark ? '#F0F0F3' : '#17181C',
+              pointBorderColor: '#FFFFFF',
+              pointBorderWidth: 2
+            },
+            {
+              label: 'Flagged Volume (₹)',
+              data: chartData.flagged || [],
+              borderColor: '#C0302B',
+              backgroundColor: 'rgba(192, 48, 43, 0.12)',
+              borderWidth: 2.5,
+              borderCapStyle: 'round',
+              borderJoinStyle: 'round',
+              tension: 0.35,
+              fill: true,
+              pointRadius: ctx => (ctx.dataIndex === (ctx.dataset.data ? ctx.dataset.data.length - 1 : 0) ? 4 : 0),
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#C0302B',
+              pointBorderColor: '#FFFFFF',
+              pointBorderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: {
+                boxWidth: 9,
+                boxHeight: 9,
+                usePointStyle: true,
+                color: textColor,
+                font: { family: 'Inter', size: 13, weight: '600' }
+              }
+            },
+            tooltip: {
+              backgroundColor: isDark ? '#18181C' : '#FFFFFF',
+              titleColor: isDark ? '#F0F0F3' : '#17181C',
+              bodyColor: isDark ? '#8E8E98' : '#6B6B70',
+              borderColor: isDark ? '#2A2A30' : '#E8E6E1',
+              borderWidth: 1,
+              padding: 12,
+              boxPadding: 5,
+              usePointStyle: true,
+              cornerRadius: 10,
+              titleFont: { family: 'Inter', size: 13, weight: '600' },
+              bodyFont: { family: 'Inter', size: 13 },
+              callbacks: {
+                label: function(c) {
+                  return ' ' + c.dataset.label + ': ₹' + Number(c.raw).toLocaleString('en-IN');
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: textColor, font: { family: 'Inter', size: 12 }, padding: 8 }
+            },
+            y: {
+              grid: { color: gridColor, borderDash: [4, 4] },
+              afterFit: (axis) => { axis.width = Math.max(axis.width, 64); },
+              ticks: {
+                color: textColor,
+                font: { family: 'Inter', size: 12 },
+                maxTicksLimit: 5,
+                padding: 10,
+                callback: v => window.formatIndianCurrency(v, { compact: true })
+              }
+            }
+          }
+        }
+      });
+      window.userChartInstance = userChartInstance;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      window.renderUserChart();
+    });
+  </script>
+
+</th:block>
+</body>
+</html>

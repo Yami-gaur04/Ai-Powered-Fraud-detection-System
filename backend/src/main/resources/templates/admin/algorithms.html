@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::content})}">
+<head><title>Algorithm Management — FraudShield</title></head>
+<body>
+<th:block th:fragment="content">
+
+  <!-- Header -->
+  <div class="fs-card p-6 sm:p-8 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <span class="fs-eyebrow">Machine Learning Operations</span>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--ink)] mt-0.5">Algorithm Versioning & Tuning</h1>
+        <p class="text-xs text-[var(--muted)] mt-1">Deploy feedback-tuned anomaly models based on confirmed fraud and false positive reviews.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left 2 cols: Performance chart & version table -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Performance Chart -->
+      <div class="fs-card p-6">
+        <div class="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
+          <div>
+            <span class="fs-eyebrow text-xs">Benchmarking</span>
+            <h2 class="text-sm font-bold text-[var(--ink)] mt-0.5">Model Accuracy Benchmark</h2>
+          </div>
+          <button onclick="downloadChartAsPng('algoChart', 'algorithm-accuracy-benchmark')"
+                  class="btn-chart-action"
+                  title="Download PNG (High-Res 2x)"
+                  aria-label="Download Model Accuracy chart as PNG">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="algo-skeleton" class="fs-skeleton h-[260px] sm:h-[300px] rounded-xl w-full"></div>
+        <div class="chart-box relative w-full h-[260px] sm:h-[300px]">
+          <canvas id="algoChart" class="hidden" aria-label="Model Accuracy Benchmark chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Versions Table -->
+      <div class="fs-card p-6">
+        <div class="pb-3 border-b border-[var(--border)] mb-4">
+          <span class="fs-eyebrow">Deployment Registry</span>
+          <h3 class="text-sm font-bold text-[var(--ink)] mt-0.5">Algorithm Releases</h3>
+        </div>
+
+        <div class="fs-table-wrap">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[var(--surface-subtle)] text-[var(--label)] uppercase font-semibold text-[10px] tracking-wider border-b border-[var(--border)]">
+              <tr>
+                <th class="py-3 px-4 whitespace-nowrap">Version</th>
+                <th class="py-3 px-4 whitespace-nowrap">Precision Accuracy</th>
+                <th class="py-3 px-4 whitespace-nowrap">Status</th>
+                <th class="py-3 px-4 whitespace-nowrap">Deployment Date</th>
+                <th class="py-3 px-4 whitespace-nowrap">Description</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border-subtle)]">
+              <tr th:each="v : ${versions}" class="hover:bg-[var(--surface-subtle)] transition">
+                <td class="py-3 px-4 font-mono font-bold text-[var(--ink)]" th:text="${v.versionName}">v1.1-tuned</td>
+                <td class="py-3 px-4 font-bold text-[var(--positive)]"
+                    th:text="${v.accuracy != null ? #numbers.formatDecimal(v.accuracy, 1, 1) + '%' : '—'}">96.8%</td>
+                <td class="py-3 px-4">
+                  <span th:if="${v.active}" class="badge-pill badge-approved text-[10px]">ACTIVE</span>
+                  <span th:unless="${v.active}" class="badge-pill text-[10px] bg-[var(--surface-subtle)] text-[var(--muted)] border border-[var(--border)]">INACTIVE</span>
+                </td>
+                <td class="py-3 px-4 text-[var(--muted)]"
+                    th:text="${v.createdAt != null ? #temporals.format(v.createdAt, 'dd MMM yyyy') : '—'}">08 Oct 2026</td>
+                <td class="py-3 px-4 text-[var(--muted)] truncate max-w-[180px]" th:text="${v.description}">Feedback tuned</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(versions)}">
+                <td colspan="5" class="py-8 text-center text-xs text-[var(--muted)]">
+                  No algorithm releases registered yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right 1 col: Trigger Update Form & Stats -->
+    <div class="space-y-6">
+      <div class="fs-card p-6">
+        <div class="flex items-center gap-2.5 pb-3 border-b border-[var(--border)] mb-4">
+          <div class="w-8 h-8 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+            <i data-lucide="cpu" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-[var(--ink)]">Trigger Retraining</h3>
+            <p class="text-[11px] text-[var(--muted)]">Fine-tune weights on new cases</p>
+          </div>
+        </div>
+
+        <div class="fs-insight mb-4">
+          <p class="text-[11px] text-[var(--muted)] leading-relaxed">
+            Trains on all reviewed dispute labels to update anomaly detection sensitivity and reduce false positives.
+          </p>
+        </div>
+
+        <form method="post" action="/admin/algorithms/update" class="space-y-4">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div>
+            <label for="versionName" class="block text-xs font-semibold text-[var(--ink)] mb-1">Version Identifier</label>
+            <input type="text" id="versionName" name="versionName" placeholder="e.g. v1.2-feedback-tuned"
+                   class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl py-2 px-3 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"/>
+          </div>
+
+          <div>
+            <label for="description" class="block text-xs font-semibold text-[var(--ink)] mb-1">Training Notes</label>
+            <textarea id="description" name="description" rows="3" placeholder="Description of tuned weights or dataset changes…"
+                      class="w-full bg-[var(--surface-subtle)] border border-[var(--border)] rounded-xl p-3 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] resize-none"></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary text-xs py-2.5 w-full justify-center">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>Retrain & Activate Model</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="fs-card p-6 space-y-3">
+        <h4 class="text-xs font-bold text-[var(--label)] uppercase tracking-wider">Model Registry Metrics</h4>
+        <div class="divide-y divide-[var(--border-subtle)] text-xs">
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Total Versions</span>
+            <span class="font-bold text-[var(--ink)]" th:text="${versions.size()}">2</span>
+          </div>
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Active Model</span>
+            <span class="font-mono font-bold text-[var(--accent)]"
+                  th:text="${activeAlgorithm != null ? activeAlgorithm.versionName : 'v1.1'}">v1.1</span>
+          </div>
+          <div class="py-2 flex justify-between">
+            <span class="text-[var(--muted)]">Peak Precision</span>
+            <span class="font-bold text-[var(--positive)]">96.8%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let algoChartInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetch('/api/charts/algorithm-performance')
+        .then(r => r.json())
+        .then(data => {
+          const sk = document.getElementById('algo-skeleton');
+          if (sk) sk.style.display = 'none';
+          const c = document.getElementById('algoChart');
+          if (c) {
+            c.classList.remove('hidden');
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#8E8E98' : '#6B6B70';
+            const gridColor = isDark ? 'rgba(255,255,255,0.08)' : '#E8E6E1';
+            const brandRed = isDark ? '#E04D47' : '#C0302B';
+            const secondaryBlue = isDark ? '#4D8FE0' : '#2F6FB5';
+
+            algoChartInstance = new Chart(c.getContext('2d'), {
+              type: 'bar',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Accuracy %',
+                  data: data.accuracy,
+                  backgroundColor: (data.colors || []).map(color => color === '#C0302B' ? brandRed : secondaryBlue),
+                  borderRadius: 5,
+                  barThickness: 14
+                }]
+              },
+              options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: isDark ? '#18181C' : '#FFFFFF',
+                    titleColor: isDark ? '#F0F0F3' : '#17181C',
+                    bodyColor: textColor,
+                    borderColor: isDark ? '#2A2A30' : '#E8E6E1',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', size: 12, weight: '600' },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    callbacks: {
+                      label: function(ctx) {
+                        return ` Precision: ${Number(ctx.raw).toFixed(1)}%`;
+                      }
+                    }
+                  }
+                },
+                scales: {
+                  x: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: gridColor, borderDash: [4, 4] },
+                    ticks: { color: textColor, font: { family: 'Inter', size: 11 }, callback: v => v + '%' }
+                  },
+                  y: {
+                    grid: { display: false },
+                    ticks: { color: isDark ? '#F0F0F3' : '#17181C', font: { family: 'Inter', size: 12, weight: '500' }, padding: 8 }
+                  }
+                }
+              }
+            });
+
+            // Resize observer
+            if (window.ResizeObserver) {
+              const obs = new ResizeObserver(() => {
+                clearTimeout(window.__algoResizeTimer);
+                window.__algoResizeTimer = setTimeout(() => {
+                  if (algoChartInstance) algoChartInstance.resize();
+                }, 80);
+              });
+              const box = c.closest('.chart-box');
+              if (box) obs.observe(box);
+            }
+          }
+        });
+    });
+  </script>
+
+</th:block>
+</body>
+</html>
